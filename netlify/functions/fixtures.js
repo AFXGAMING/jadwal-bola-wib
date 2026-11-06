@@ -25,3 +25,4 @@ exports.handler = async (event) => {
     return { statusCode: 502, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'Tidak dapat menghubungi API-Football.' }) };
   }
 };
+ 
