@@ -64,7 +64,6 @@ footer{border-top:1px solid var(--line);padding:20px 14px;color:var(--muted);fon
 </style>
 </head>
 <body>
-
 <header>
 <div class="header-inner">
   <div class="brand">
@@ -189,7 +188,7 @@ function getStatus(match){
   return {label:labels[code]||code,type:"other"};
 }
 
-/* Deteksi wanita berdasarkan penanda pada nama kompetisi dan tim. */
+/* Deteksi pertandingan wanita. */
 function isWomenMatch(match){
   const text=[
     match.league?.name,
@@ -197,7 +196,7 @@ function isWomenMatch(match){
     match.teams?.away?.name
   ].join(" ").toLowerCase();
 
-  return /\b(women|woman|womens|woman's|feminine|femenina|female|ladies|girls|女)\b/i.test(text);
+  return /women'?s?|feminine|femenina|female|ladies|girls|女/i.test(text);
 }
 
 function getGender(match){
@@ -231,7 +230,6 @@ function updateLeagueOptions(){
   }
 }
 
-/* Distribusi Poisson untuk estimasi gol tersisa. */
 function poisson(lambda,k){
   let result=Math.exp(-lambda);
   for(let i=1;i<=k;i++) result*=lambda/i;
@@ -442,7 +440,6 @@ async function load(){
       throw new Error("Format data pertandingan tidak sesuai.");
     }
 
-    // Tidak lagi menyaring pertandingan wanita.
     fixtures=data.response.filter(match=>
       match&&match.fixture&&match.teams&&match.league
     );
