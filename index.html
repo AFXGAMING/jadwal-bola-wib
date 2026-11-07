@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#080e1c">
-<title>KickOff — Jadwal Bola WIB</title>
+<title>KickOff — Semua Pertandingan WIB</title>
 <style>
 :root{--bg:#080e1c;--panel:#111b2e;--line:#263650;--text:#f1f5ff;--muted:#91a1ba;--blue:#4388ff;--green:#28d69a;--red:#ff5c70}
 *{box-sizing:border-box}
@@ -26,7 +26,7 @@ button{cursor:pointer}
 .date-row{display:flex;gap:8px;margin-bottom:12px;align-items:center}
 .date-label{flex:1;font-weight:bold;font-size:14px}
 .refresh-button{color:white;background:#17243a}
-.filters{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.filters{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
 input,select{width:100%;min-width:0;padding:12px;border-radius:9px;border:1px solid var(--line);background:#0b1424;color:var(--text);outline:none}
 .section-heading{display:flex;justify-content:space-between;align-items:center;margin:20px 2px 12px;gap:10px}
 .section-heading h2{font-size:17px;margin:0}
@@ -39,6 +39,7 @@ input,select{width:100%;min-width:0;padding:12px;border-radius:9px;border:1px so
 .status{font-size:11px;font-weight:bold;white-space:nowrap;color:var(--muted)}
 .status.live{color:var(--red)}
 .status.finished{color:var(--green)}
+.gender-tag{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:3px 7px;white-space:nowrap}
 .teams{display:grid;grid-template-columns:1fr 65px 1fr;align-items:center;gap:7px}
 .team{display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0}
 .team img{width:37px;height:37px;object-fit:contain}
@@ -58,7 +59,8 @@ input,select{width:100%;min-width:0;padding:12px;border-radius:9px;border:1px so
 .no-prediction{font-size:12px;color:var(--muted);line-height:1.5}
 footer{border-top:1px solid var(--line);padding:20px 14px;color:var(--muted);font-size:12px;text-align:center;line-height:1.8}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px}
-@media(max-width:480px){h1{font-size:20px}.filters{grid-template-columns:1fr}.tabs button{font-size:12px}.probability strong{font-size:17px}}
+@media(max-width:600px){.filters{grid-template-columns:1fr}.tabs button{font-size:12px}}
+@media(max-width:480px){h1{font-size:20px}.probability strong{font-size:17px}}
 </style>
 </head>
 <body>
@@ -69,7 +71,7 @@ footer{border-top:1px solid var(--line);padding:20px 14px;color:var(--muted);fon
     <div class="brand-icon">⚽</div>
     <div>
       <h1>KickOff</h1>
-      <div class="subtitle">Jadwal & Skor Sepak Bola WIB</div>
+      <div class="subtitle">Semua Pertandingan Sepak Bola WIB</div>
     </div>
   </div>
 </div>
@@ -84,11 +86,16 @@ footer{border-top:1px solid var(--line);padding:20px 14px;color:var(--muted);fon
 
   <section class="toolbar">
     <div class="date-row">
-      <div class="date-label">📅 Pertandingan Hari Ini</div>
+      <div class="date-label">📅 Semua Pertandingan Hari Ini</div>
       <button class="refresh-button" id="refreshBtn">↻ Refresh</button>
     </div>
     <div class="filters">
-      <input id="searchInput" type="search" placeholder="Cari nama klub...">
+      <input id="searchInput" type="search" placeholder="Cari klub atau negara...">
+      <select id="genderFilter">
+        <option value="all">Semua: Pria & Wanita</option>
+        <option value="men">Pria</option>
+        <option value="women">Wanita</option>
+      </select>
       <select id="leagueFilter">
         <option value="all">Semua Kompetisi</option>
       </select>
@@ -108,6 +115,7 @@ footer{border-top:1px solid var(--line);padding:20px 14px;color:var(--muted);fon
 <footer>
   <div><span class="dot"></span> Waktu Indonesia Barat (WIB)</div>
   <div>Data pertandingan: API-Football</div>
+  <div>Klub dan tim nasional, pria maupun wanita.</div>
   <div>Prediksi LIVE: estimasi model sederhana, bukan hasil pasti.</div>
   <div>KickOff © 2026</div>
 </footer>
@@ -117,6 +125,7 @@ const API="/.netlify/functions/fixtures";
 const matchesEl=document.getElementById("matches");
 const refreshBtn=document.getElementById("refreshBtn");
 const searchInput=document.getElementById("searchInput");
+const genderFilter=document.getElementById("genderFilter");
 const leagueFilter=document.getElementById("leagueFilter");
 const matchCount=document.getElementById("matchCount");
 const sectionTitle=document.getElementById("sectionTitle");
@@ -180,15 +189,19 @@ function getStatus(match){
   return {label:labels[code]||code,type:"other"};
 }
 
+/* Deteksi wanita berdasarkan penanda pada nama kompetisi dan tim. */
 function isWomenMatch(match){
   const text=[
-    match.league.name,
-    match.teams.home.name,
-    match.teams.away.name
+    match.league?.name,
+    match.teams?.home?.name,
+    match.teams?.away?.name
   ].join(" ").toLowerCase();
 
-  return ["women","womens","feminine","femenina","female"]
-    .some(word=>text.includes(word));
+  return /\b(women|woman|womens|woman's|feminine|femenina|female|ladies|girls|女)\b/i.test(text);
+}
+
+function getGender(match){
+  return isWomenMatch(match)?"women":"men";
 }
 
 function getTime(match){
@@ -225,18 +238,12 @@ function poisson(lambda,k){
   return result;
 }
 
-/*
-  Estimasi sederhana berdasarkan skor saat ini dan waktu tersisa.
-  Angka dasar adalah asumsi model, bukan statistik pertandingan.
-*/
-
 function calculatePrediction(match){
   const code=match.fixture.status.short;
   const elapsed=match.fixture.status.elapsed;
   const homeScore=match.goals.home;
   const awayScore=match.goals.away;
 
-  // Hanya menghitung pertandingan yang sedang berlangsung.
   if(
     !liveCodes.includes(code) ||
     elapsed===null || elapsed===undefined ||
@@ -250,37 +257,25 @@ function calculatePrediction(match){
     return null;
   }
 
-  // Waktu normal 90 menit, extra time 120 menit.
   const totalMinutes=code==="ET"?120:90;
-
   const remaining=Math.max(
-    0,
-    totalMinutes-Math.min(Number(elapsed),totalMinutes)
+    0,totalMinutes-Math.min(Number(elapsed),totalMinutes)
   );
 
-  // Asumsi rata-rata gol model, bukan statistik aktual.
   const homeLambda=1.35*(remaining/90);
   const awayLambda=1.05*(remaining/90);
 
-  let homeWin=0;
-  let draw=0;
-  let awayWin=0;
+  let homeWin=0,draw=0,awayWin=0;
 
   for(let h=0;h<=8;h++){
     for(let a=0;a<=8;a++){
-      const probability=
-        poisson(homeLambda,h)*poisson(awayLambda,a);
-
+      const probability=poisson(homeLambda,h)*poisson(awayLambda,a);
       const finalHome=Number(homeScore)+h;
       const finalAway=Number(awayScore)+a;
 
-      if(finalHome>finalAway){
-        homeWin+=probability;
-      }else if(finalHome===finalAway){
-        draw+=probability;
-      }else{
-        awayWin+=probability;
-      }
+      if(finalHome>finalAway) homeWin+=probability;
+      else if(finalHome===finalAway) draw+=probability;
+      else awayWin+=probability;
     }
   }
 
@@ -334,6 +329,7 @@ function predictionHTML(match){
 function renderMatches(){
   const search=searchInput.value.toLowerCase().trim();
   const selectedLeague=leagueFilter.value;
+  const selectedGender=genderFilter.value;
 
   const filtered=fixtures.filter(match=>{
     const status=getStatus(match);
@@ -347,9 +343,12 @@ function renderMatches(){
     const matchesLeague=selectedLeague==="all"||
       String(match.league.id)===selectedLeague;
 
+    const matchesGender=selectedGender==="all"||
+      getGender(match)===selectedGender;
+
     const matchesView=status.type===currentView;
 
-    return matchesSearch&&matchesLeague&&matchesView;
+    return matchesSearch&&matchesLeague&&matchesGender&&matchesView;
   }).sort((a,b)=>new Date(a.fixture.date)-new Date(b.fixture.date));
 
   matchCount.textContent=`${filtered.length} pertandingan`;
@@ -366,6 +365,8 @@ function renderMatches(){
     const league=match.league;
     const hasScore=match.goals.home!==null&&match.goals.away!==null;
     const score=hasScore?`${match.goals.home} - ${match.goals.away}`:"VS";
+    const gender=getGender(match);
+    const genderLabel=gender==="women"?"Wanita":"Pria";
 
     return `
     <article class="match-card">
@@ -391,6 +392,9 @@ function renderMatches(){
         ${escapeHTML(getTime(match))}
         ${match.fixture.venue?.name?" · "+escapeHTML(match.fixture.venue.name):""}
       </div>
+      <div style="text-align:center;margin-top:9px">
+        <span class="gender-tag">${genderLabel}</span>
+      </div>
       ${status.type==="live"?predictionHTML(match):""}
     </article>`;
   }).join("");
@@ -403,6 +407,7 @@ function setView(view){
     live:"Sedang Main",
     finished:"Selesai"
   };
+
   sectionTitle.textContent=titles[view];
 
   document.querySelectorAll(".tabs button").forEach(button=>{
@@ -418,7 +423,6 @@ async function load(){
   loading=true;
   refreshBtn.disabled=true;
   refreshBtn.textContent="Memuat...";
-
   matchesEl.innerHTML='<div class="status-message">Mengambil data pertandingan...</div>';
 
   try{
@@ -438,8 +442,9 @@ async function load(){
       throw new Error("Format data pertandingan tidak sesuai.");
     }
 
+    // Tidak lagi menyaring pertandingan wanita.
     fixtures=data.response.filter(match=>
-      match&&match.fixture&&match.teams&&match.league&&!isWomenMatch(match)
+      match&&match.fixture&&match.teams&&match.league
     );
 
     updateLeagueOptions();
@@ -466,6 +471,7 @@ document.querySelectorAll(".tabs button").forEach(button=>{
 
 refreshBtn.addEventListener("click",load);
 searchInput.addEventListener("input",renderMatches);
+genderFilter.addEventListener("change",renderMatches);
 leagueFilter.addEventListener("change",renderMatches);
 
 load();
