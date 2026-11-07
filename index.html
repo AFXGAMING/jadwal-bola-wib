@@ -294,40 +294,6 @@ function calculatePrediction(match){
   return [home,drawPercent,away];
 }
 
-  const totalMinutes=90;
-  const remaining=Math.max(0,totalMinutes-Math.min(elapsed,totalMinutes));
-
-  // Asumsi rata-rata gol model, bukan data statistik aktual.
-  const homeLambda=1.35*(remaining/90);
-  const awayLambda=1.05*(remaining/90);
-
-  let homeWin=0,draw=0,awayWin=0;
-
-  for(let h=0;h<=8;h++){
-    for(let a=0;a<=8;a++){
-      const probability=poisson(homeLambda,h)*poisson(awayLambda,a);
-      const finalHome=homeScore+h;
-      const finalAway=awayScore+a;
-
-      if(finalHome>finalAway) homeWin+=probability;
-      else if(finalHome===finalAway) draw+=probability;
-      else awayWin+=probability;
-    }
-  }
-
-  const total=homeWin+draw+awayWin;
-  if(!total) return null;
-
-  const values=[
-    Math.round(homeWin/total*100),
-    Math.round(draw/total*100),
-    0
-  ];
-  values[2]=100-values[0]-values[1];
-
-  return values;
-}
-
 function predictionHTML(match){
   const values=calculatePrediction(match);
 
