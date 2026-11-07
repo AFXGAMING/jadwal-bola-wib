@@ -2,317 +2,63 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#080e1c">
-  <title>KickOff — Jadwal Bola WIB</title>
-  <meta name="description" content="Jadwal sepak bola hari ini dan besok, skor langsung, dan hasil pertandingan dalam waktu WIB.">
-
-  <style>
-    :root {
-      --bg: #080e1c;
-      --panel: #111b2e;
-      --panel2: #17243a;
-      --line: #263650;
-      --text: #f1f5ff;
-      --muted: #91a1ba;
-      --blue: #4388ff;
-      --green: #28d69a;
-      --red: #ff5c70;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
-    }
-
-    header {
-      background: #0d1729;
-      border-bottom: 1px solid var(--line);
-      padding: 18px 16px;
-    }
-
-    .header-inner,
-    main,
-    footer {
-      max-width: 950px;
-      margin: auto;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .brand-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
-      background: var(--blue);
-      display: grid;
-      place-items: center;
-      font-size: 23px;
-    }
-
-    h1 {
-      font-size: 23px;
-      margin: 0;
-    }
-
-    .subtitle {
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 5px;
-    }
-
-    main {
-      padding: 20px 14px 35px;
-    }
-
-    .nav {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      margin-bottom: 18px;
-    }
-
-    button,
-    select,
-    input {
-      font: inherit;
-    }
-
-    .nav button,
-    .date-button,
-    .refresh-button {
-      border: 1px solid var(--line);
-      color: var(--muted);
-      background: var(--panel);
-      border-radius: 9px;
-      padding: 11px 16px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    button.active {
-      background: var(--blue);
-      border-color: var(--blue);
-      color: white;
-    }
-
-    .toolbar {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 13px;
-      padding: 13px;
-      margin-bottom: 16px;
-    }
-
-    .date-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .date-button {
-      flex: 1;
-    }
-
-    .refresh-button {
-      color: white;
-      background: var(--panel2);
-    }
-
-    .filters {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 9px;
-    }
-
-    input,
-    select {
-      width: 100%;
-      min-width: 0;
-      padding: 12px;
-      border-radius: 9px;
-      border: 1px solid var(--line);
-      background: #0b1424;
-      color: var(--text);
-      outline: none;
-    }
-
-    input:focus,
-    select:focus {
-      border-color: var(--blue);
-    }
-
-    .section-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin: 20px 2px 12px;
-    }
-
-    .section-heading h2 {
-      font-size: 17px;
-      margin: 0;
-    }
-
-    .match-count {
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .status-message {
-      color: var(--muted);
-      text-align: center;
-      padding: 35px 12px;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      line-height: 1.6;
-    }
-
-    .match-card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 11px;
-    }
-
-    .match-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-
-    .league {
-      color: var(--muted);
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      min-width: 0;
-    }
-
-    .league img {
-      width: 19px;
-      height: 19px;
-      object-fit: contain;
-    }
-
-    .status {
-      font-size: 11px;
-      font-weight: bold;
-      white-space: nowrap;
-      color: var(--muted);
-    }
-
-    .status.live {
-      color: var(--red);
-    }
-
-    .status.finished {
-      color: var(--green);
-    }
-
-    .teams {
-      display: grid;
-      grid-template-columns: 1fr 65px 1fr;
-      align-items: center;
-      gap: 7px;
-    }
-
-    .team {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 7px;
-      min-width: 0;
-    }
-
-    .team img {
-      width: 37px;
-      height: 37px;
-      object-fit: contain;
-    }
-
-    .team-name {
-      font-size: 13px;
-      font-weight: bold;
-      line-height: 1.35;
-      overflow-wrap: anywhere;
-    }
-
-    .score {
-      font-size: 22px;
-      font-weight: bold;
-      text-align: center;
-      white-space: nowrap;
-    }
-
-    .kickoff {
-      color: var(--muted);
-      font-size: 12px;
-      text-align: center;
-      margin-top: 13px;
-    }
-
-    .empty {
-      text-align: center;
-      color: var(--muted);
-      background: var(--panel);
-      padding: 28px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-    }
-
-    footer {
-      border-top: 1px solid var(--line);
-      padding: 20px 14px;
-      color: var(--muted);
-      font-size: 12px;
-      text-align: center;
-      line-height: 1.8;
-    }
-
-    .dot {
-      display: inline-block;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--green);
-      margin-right: 5px;
-    }
-
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 20px;
-      }
-
-      .filters {
-        grid-template-columns: 1fr;
-      }
-
-      .team-name {
-        font-size: 12px;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080e1c">
+<title>KickOff — Jadwal Bola WIB</title>
+<style>
+:root {
+  --bg:#080e1c;
+  --panel:#111b2e;
+  --line:#263650;
+  --text:#f1f5ff;
+  --muted:#91a1ba;
+  --blue:#4388ff;
+  --green:#28d69a;
+  --red:#ff5c70;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+header{background:#0d1729;border-bottom:1px solid var(--line);padding:18px 15px}
+.header-inner,main,footer{max-width:950px;margin:auto}
+.brand{display:flex;align-items:center;gap:11px}
+.brand-icon{width:42px;height:42px;border-radius:12px;background:var(--blue);display:grid;place-items:center;font-size:23px}
+h1{font-size:23px;margin:0}
+.subtitle{font-size:12px;color:var(--muted);margin-top:5px}
+main{padding:20px 14px 35px}
+.nav{display:flex;gap:8px;overflow-x:auto;margin-bottom:16px}
+button,select,input{font:inherit}
+button{cursor:pointer}
+.nav button,.refresh-button,.date-button{padding:11px 16px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--muted);white-space:nowrap}
+button.active{background:var(--blue);border-color:var(--blue);color:white}
+.toolbar{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px;margin-bottom:17px}
+.date-row{display:flex;gap:8px;margin-bottom:12px}
+.date-button{flex:1;color:white;background:var(--blue);border-color:var(--blue)}
+.refresh-button{color:white;background:#17243a}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+input,select{width:100%;min-width:0;padding:12px;border-radius:9px;border:1px solid var(--line);background:#0b1424;color:var(--text);outline:none}
+.section-heading{display:flex;justify-content:space-between;align-items:center;margin:20px 2px 12px;gap:10px}
+.section-heading h2{font-size:17px;margin:0}
+.match-count{font-size:12px;color:var(--muted)}
+.status-message,.empty{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:30px 12px;text-align:center;color:var(--muted);line-height:1.6}
+.match-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:11px}
+.match-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px}
+.league{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px;min-width:0}
+.league img{width:19px;height:19px;object-fit:contain}
+.status{font-size:11px;font-weight:bold;white-space:nowrap;color:var(--muted)}
+.status.live{color:var(--red)}
+.status.finished{color:var(--green)}
+.teams{display:grid;grid-template-columns:1fr 65px 1fr;align-items:center;gap:7px}
+.team{display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0}
+.team img{width:37px;height:37px;object-fit:contain}
+.team-name{font-size:13px;font-weight:bold;line-height:1.35;overflow-wrap:anywhere}
+.score{font-size:22px;font-weight:bold;text-align:center;white-space:nowrap}
+.kickoff{text-align:center;color:var(--muted);font-size:12px;margin-top:13px}
+footer{border-top:1px solid var(--line);padding:20px 14px;color:var(--muted);font-size:12px;text-align:center;line-height:1.8}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px}
+@media(max-width:480px){h1{font-size:20px}.filters{grid-template-columns:1fr}.team-name{font-size:12px}}
+</style>
 </head>
-
 <body>
 
 <header>
@@ -328,7 +74,6 @@
 </header>
 
 <main>
-
   <nav class="nav">
     <button class="active" data-view="all">Jadwal</button>
     <button data-view="live">🔴 LIVE</button>
@@ -336,24 +81,16 @@
   </nav>
 
   <section class="toolbar">
-
     <div class="date-row">
-      <button class="date-button active" id="todayBtn">Hari Ini</button>
-      <button class="date-button" id="tomorrowBtn">Besok</button>
-      <button class="refresh-button" id="refreshBtn">↻</button>
+      <button class="date-button">Hari Ini</button>
+      <button class="refresh-button" id="refreshBtn">↻ Refresh</button>
     </div>
 
     <div class="filters">
-      <input
-        id="searchInput"
-        type="search"
-        placeholder="Cari nama klub..."
-      >
-
+      <input id="searchInput" type="search" placeholder="Cari nama klub...">
       <select id="leagueFilter">
         <option value="all">Semua Kompetisi</option>
       </select>
-
       <select id="statusFilter">
         <option value="all">Semua Status</option>
         <option value="live">Sedang Berlangsung</option>
@@ -361,7 +98,6 @@
         <option value="finished">Selesai</option>
       </select>
     </div>
-
   </section>
 
   <div class="section-heading">
@@ -372,7 +108,6 @@
   <section id="matches">
     <div class="status-message">Memuat jadwal pertandingan...</div>
   </section>
-
 </main>
 
 <footer>
@@ -382,443 +117,281 @@
 </footer>
 
 <script>
-  const API = "/.netlify/functions/fixtures";
+const API = "/.netlify/functions/fixtures";
 
-  const matchesEl = document.getElementById("matches");
-  const todayBtn = document.getElementById("todayBtn");
-  const tomorrowBtn = document.getElementById("tomorrowBtn");
-  const refreshBtn = document.getElementById("refreshBtn");
-  const searchInput = document.getElementById("searchInput");
-  const leagueFilter = document.getElementById("leagueFilter");
-  const statusFilter = document.getElementById("statusFilter");
-  const dateTitle = document.getElementById("dateTitle");
-  const matchCount = document.getElementById("matchCount");
+const matchesEl = document.getElementById("matches");
+const refreshBtn = document.getElementById("refreshBtn");
+const searchInput = document.getElementById("searchInput");
+const leagueFilter = document.getElementById("leagueFilter");
+const statusFilter = document.getElementById("statusFilter");
+const matchCount = document.getElementById("matchCount");
 
-  let selectedDate = "today";
-  let currentView = "all";
-  let fixtures = [];
-  let loading = false;
+let fixtures = [];
+let currentView = "all";
+let loading = false;
 
-  const liveCodes = [
-    "1H", "HT", "2H", "ET", "BT", "P",
-    "SUSP", "INT", "LIVE"
-  ];
+const liveCodes = ["1H","HT","2H","ET","BT","P","SUSP","INT","LIVE"];
+const finishedCodes = ["FT","AET","PEN"];
 
-  const finishedCodes = ["FT", "AET", "PEN"];
+function getJakartaDate() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone:"Asia/Jakarta",
+    year:"numeric",month:"2-digit",day:"2-digit"
+  }).formatToParts(new Date());
 
-  const upcomingCodes = ["NS", "TBD"];
+  const v = {};
+  parts.forEach(p => v[p.type] = p.value);
+  return `${v.year}-${v.month}-${v.day}`;
+}
 
-  function getJakartaDate(offset = 0) {
-    const now = new Date();
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",
+    '"':"&quot;","'":"&#39;"
+  })[c]);
+}
 
-    const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Jakarta",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    }).formatToParts(now);
+function getStatus(match) {
+  const code = match.fixture.status.short;
+  const elapsed = match.fixture.status.elapsed;
 
-    const values = {};
-    parts.forEach(part => {
-      values[part.type] = part.value;
-    });
-
-    const date = new Date(
-      Number(values.year),
-      Number(values.month) - 1,
-      Number(values.day) + offset
-    );
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-  }
-
-  function formatDate(dateString) {
-    return new Intl.DateTimeFormat("id-ID", {
-      timeZone: "Asia/Jakarta",
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric"
-    }).format(new Date(dateString + "T12:00:00+07:00"));
-  }
-
-  function escapeHTML(value) {
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[char]);
-  }
-
-  function getStatus(match) {
-    const code = match.fixture.status.short;
-    const elapsed = match.fixture.status.elapsed;
-
-    if (liveCodes.includes(code)) {
-      if (code === "HT") return {
-        label: "ISTIRAHAT",
-        type: "live"
-      };
-
-      if (code === "SUSP") return {
-        label: "DITUNDA SEMENTARA",
-        type: "live"
-      };
-
-      if (code === "INT") return {
-        label: "TERHENTI",
-        type: "live"
-      };
-
-      if (code === "P") return {
-        label: "ADU PENALTI",
-        type: "live"
-      };
-
-      return {
-        label: elapsed != null ? `${elapsed}' LIVE` : "LIVE",
-        type: "live"
-      };
-    }
-
-    if (finishedCodes.includes(code)) {
-      return {
-        label: code === "AET" ? "SELESAI (ET)" :
-               code === "PEN" ? "SELESAI (PEN)" : "SELESAI",
-        type: "finished"
-      };
-    }
-
-    if (upcomingCodes.includes(code)) {
-      return {
-        label: "BELUM DIMULAI",
-        type: "upcoming"
-      };
-    }
-
-    const otherStatuses = {
-      PST: "DITUNDA",
-      CANC: "DIBATALKAN",
-      ABD: "DIHENTIKAN",
-      AWD: "MENANG WO",
-      WO: "WALKOVER"
+  if (liveCodes.includes(code)) {
+    const labels = {
+      HT:"ISTIRAHAT",
+      SUSP:"DITUNDA SEMENTARA",
+      INT:"TERHENTI",
+      P:"ADU PENALTI"
     };
-
     return {
-      label: otherStatuses[code] || code || "TIDAK DIKETAHUI",
-      type: "other"
+      label: labels[code] ||
+        (elapsed != null ? `${elapsed}' LIVE` : "LIVE"),
+      type:"live"
     };
   }
 
-  function isWomenMatch(match) {
-    const league = (match.league.name || "").toLowerCase();
-    const home = (match.teams.home.name || "").toLowerCase();
-    const away = (match.teams.away.name || "").toLowerCase();
-
-    return (
-      league.includes("women") ||
-      league.includes("feminine") ||
-      league.includes("femenina") ||
-      league.includes("womens") ||
-      league.includes("female") ||
-      home.includes("women") ||
-      away.includes("women")
-    );
+  if (finishedCodes.includes(code)) {
+    return {
+      label: code === "AET" ? "SELESAI (ET)" :
+        code === "PEN" ? "SELESAI (PEN)" : "SELESAI",
+      type:"finished"
+    };
   }
 
-  function getTime(match) {
-    return new Intl.DateTimeFormat("id-ID", {
-      timeZone: "Asia/Jakarta",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    }).format(new Date(match.fixture.date)) + " WIB";
+  if (["NS","TBD"].includes(code)) {
+    return {label:"BELUM DIMULAI",type:"upcoming"};
   }
 
-  function updateLeagueOptions() {
-    const previous = leagueFilter.value;
+  const labels = {
+    PST:"DITUNDA",CANC:"DIBATALKAN",
+    ABD:"DIHENTIKAN",AWD:"MENANG WO",WO:"WALKOVER"
+  };
 
-    const leagues = [...new Map(
-      fixtures.map(match => [
-        match.league.id,
-        {
-          id: match.league.id,
-          name: match.league.name
-        }
-      ])
-    ).values()].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
+  return {label:labels[code] || code,type:"other"};
+}
 
-    leagueFilter.innerHTML =
-      '<option value="all">Semua Kompetisi</option>';
+function isWomenMatch(match) {
+  const text = [
+    match.league.name,
+    match.teams.home.name,
+    match.teams.away.name
+  ].join(" ").toLowerCase();
 
-    leagues.forEach(league => {
-      const option = document.createElement("option");
-      option.value = String(league.id);
-      option.textContent = league.name;
-      leagueFilter.appendChild(option);
-    });
+  return ["women","womens","feminine","femenina","female"]
+    .some(word => text.includes(word));
+}
 
-    if (
-      [...leagueFilter.options].some(option => option.value === previous)
-    ) {
-      leagueFilter.value = previous;
-    }
+function getTime(match) {
+  return new Intl.DateTimeFormat("id-ID", {
+    timeZone:"Asia/Jakarta",
+    hour:"2-digit",minute:"2-digit",hour12:false
+  }).format(new Date(match.fixture.date)) + " WIB";
+}
+
+function updateLeagueOptions() {
+  const previous = leagueFilter.value;
+
+  const leagues = [...new Map(
+    fixtures.map(m => [m.league.id,{
+      id:m.league.id,name:m.league.name
+    }])
+  ).values()].sort((a,b) => a.name.localeCompare(b.name));
+
+  leagueFilter.innerHTML =
+    '<option value="all">Semua Kompetisi</option>';
+
+  leagues.forEach(league => {
+    const option = document.createElement("option");
+    option.value = String(league.id);
+    option.textContent = league.name;
+    leagueFilter.appendChild(option);
+  });
+
+  if ([...leagueFilter.options].some(o => o.value === previous)) {
+    leagueFilter.value = previous;
+  }
+}
+
+function renderMatches() {
+  const search = searchInput.value.toLowerCase().trim();
+  const selectedLeague = leagueFilter.value;
+  const selectedStatus = statusFilter.value;
+
+  const filtered = fixtures.filter(match => {
+    const status = getStatus(match);
+    const home = match.teams.home.name.toLowerCase();
+    const away = match.teams.away.name.toLowerCase();
+    const league = match.league.name.toLowerCase();
+
+    const matchesSearch = !search ||
+      home.includes(search) || away.includes(search) ||
+      league.includes(search);
+
+    const matchesLeague = selectedLeague === "all" ||
+      String(match.league.id) === selectedLeague;
+
+    const matchesView =
+      currentView === "all" ||
+      (currentView === "live" && status.type === "live") ||
+      (currentView === "finished" && status.type === "finished");
+
+    const matchesStatus = selectedStatus === "all" ||
+      status.type === selectedStatus;
+
+    return matchesSearch && matchesLeague &&
+      matchesView && matchesStatus;
+  }).sort((a,b) =>
+    new Date(a.fixture.date) - new Date(b.fixture.date)
+  );
+
+  matchCount.textContent = `${filtered.length} pertandingan`;
+
+  if (!filtered.length) {
+    matchesEl.innerHTML =
+      '<div class="empty">Tidak ada pertandingan yang sesuai.</div>';
+    return;
   }
 
-  function renderMatches() {
-    const search = searchInput.value.toLowerCase().trim();
-    const selectedLeague = leagueFilter.value;
-    const selectedStatus = statusFilter.value;
+  matchesEl.innerHTML = filtered.map(match => {
+    const status = getStatus(match);
+    const home = match.teams.home;
+    const away = match.teams.away;
+    const league = match.league;
+    const hasScore = match.goals.home !== null &&
+      match.goals.away !== null;
+    const score = hasScore
+      ? `${match.goals.home} - ${match.goals.away}` : "VS";
 
-    let filtered = fixtures.filter(match => {
-      const status = getStatus(match);
-
-      const home = match.teams.home.name.toLowerCase();
-      const away = match.teams.away.name.toLowerCase();
-      const league = match.league.name.toLowerCase();
-
-      const matchesSearch =
-        !search ||
-        home.includes(search) ||
-        away.includes(search) ||
-        league.includes(search);
-
-      const matchesLeague =
-        selectedLeague === "all" ||
-        String(match.league.id) === selectedLeague;
-
-      let matchesView = true;
-
-      if (currentView === "live") {
-        matchesView = status.type === "live";
-      } else if (currentView === "finished") {
-        matchesView = status.type === "finished";
-      }
-
-      let matchesStatus = true;
-
-      if (selectedStatus !== "all") {
-        matchesStatus = status.type === selectedStatus;
-      }
-
-      return (
-        matchesSearch &&
-        matchesLeague &&
-        matchesView &&
-        matchesStatus
-      );
-    });
-
-    filtered.sort((a, b) =>
-      new Date(a.fixture.date) - new Date(b.fixture.date)
-    );
-
-    matchCount.textContent = `${filtered.length} pertandingan`;
-
-    if (filtered.length === 0) {
-      matchesEl.innerHTML = `
-        <div class="empty">
-          Tidak ada pertandingan yang sesuai dengan filter.
-        </div>
-      `;
-      return;
-    }
-
-    matchesEl.innerHTML = filtered.map(match => {
-      const status = getStatus(match);
-
-      const home = match.teams.home;
-      const away = match.teams.away;
-      const league = match.league;
-
-      const homeScore = match.goals.home;
-      const awayScore = match.goals.away;
-
-      const hasScore =
-        homeScore !== null && awayScore !== null;
-
-      const score = hasScore
-        ? `${homeScore} - ${awayScore}`
-        : "VS";
-
-      return `
-        <article class="match-card">
-
-          <div class="match-top">
-            <div class="league">
-              ${
-                league.logo
-                  ? `<img src="${escapeHTML(league.logo)}" alt="" loading="lazy">`
-                  : ""
-              }
-              <span>${escapeHTML(league.name)}</span>
-            </div>
-
-            <span class="status ${status.type}">
-              ${escapeHTML(status.label)}
-            </span>
-          </div>
-
-          <div class="teams">
-
-            <div class="team">
-              ${
-                home.logo
-                  ? `<img src="${escapeHTML(home.logo)}" alt="" loading="lazy">`
-                  : ""
-              }
-              <div class="team-name">
-                ${escapeHTML(home.name)}
-              </div>
-            </div>
-
-            <div class="score">
-              ${escapeHTML(score)}
-            </div>
-
-            <div class="team">
-              ${
-                away.logo
-                  ? `<img src="${escapeHTML(away.logo)}" alt="" loading="lazy">`
-                  : ""
-              }
-              <div class="team-name">
-                ${escapeHTML(away.name)}
-              </div>
-            </div>
-
-          </div>
-
-          <div class="kickoff">
-            ${escapeHTML(getTime(match))}
-            ${match.fixture.venue?.name
-              ? " · " + escapeHTML(match.fixture.venue.name)
+    return `
+      <article class="match-card">
+        <div class="match-top">
+          <div class="league">
+            ${league.logo
+              ? `<img src="${escapeHTML(league.logo)}" alt="" loading="lazy">`
               : ""}
+            <span>${escapeHTML(league.name)}</span>
+          </div>
+          <span class="status ${status.type}">
+            ${escapeHTML(status.label)}
+          </span>
+        </div>
+
+        <div class="teams">
+          <div class="team">
+            ${home.logo
+              ? `<img src="${escapeHTML(home.logo)}" alt="" loading="lazy">`
+              : ""}
+            <div class="team-name">${escapeHTML(home.name)}</div>
           </div>
 
-        </article>
-      `;
-    }).join("");
-  }
+          <div class="score">${escapeHTML(score)}</div>
 
-  async function load() {
-    if (loading) return;
+          <div class="team">
+            ${away.logo
+              ? `<img src="${escapeHTML(away.logo)}" alt="" loading="lazy">`
+              : ""}
+            <div class="team-name">${escapeHTML(away.name)}</div>
+          </div>
+        </div>
 
-    loading = true;
-    refreshBtn.textContent = "...";
-    refreshBtn.disabled = true;
+        <div class="kickoff">
+          ${escapeHTML(getTime(match))}
+          ${match.fixture.venue?.name
+            ? " · " + escapeHTML(match.fixture.venue.name) : ""}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
 
+async function load() {
+  if (loading) return;
+
+  loading = true;
+  refreshBtn.disabled = true;
+  refreshBtn.textContent = "Memuat...";
+
+  matchesEl.innerHTML =
+    '<div class="status-message">Mengambil jadwal pertandingan...</div>';
+
+  try {
+    const date = getJakartaDate();
+    const response = await fetch(
+      `${API}?date=${encodeURIComponent(date)}`,
+      {cache:"no-store"}
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `Server ${response.status}`);
+    }
+
+    if (!Array.isArray(data.response)) {
+      throw new Error("Format data pertandingan tidak sesuai.");
+    }
+
+    fixtures = data.response.filter(match =>
+      match && match.fixture && match.teams &&
+      match.league && !isWomenMatch(match)
+    );
+
+    updateLeagueOptions();
+    renderMatches();
+
+  } catch (error) {
     matchesEl.innerHTML = `
       <div class="status-message">
-        Mengambil data pertandingan...
+        Gagal mengambil jadwal pertandingan.<br>
+        ${escapeHTML(error.message)}<br><br>
+        Silakan coba refresh kembali.
       </div>
     `;
-
-    const date = selectedDate === "today"
-      ? getJakartaDate(0)
-      : getJakartaDate(1);
-
-    dateTitle.textContent = selectedDate === "today"
-      ? "Pertandingan Hari Ini"
-      : "Pertandingan Besok";
-
-    try {
-      const response = await fetch(
-        `${API}?date=${encodeURIComponent(date)}`,
-        { cache: "no-store" }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || `Server merespons ${response.status}`
-        );
-      }
-
-      if (!Array.isArray(data.response)) {
-        throw new Error("Format data pertandingan tidak sesuai.");
-      }
-
-      fixtures = data.response.filter(match =>
-        match &&
-        match.fixture &&
-        match.teams &&
-        match.league &&
-        !isWomenMatch(match)
-      );
-
-      updateLeagueOptions();
-      renderMatches();
-
-    } catch (error) {
-      matchesEl.innerHTML = `
-        <div class="status-message">
-          Gagal mengambil jadwal pertandingan.<br>
-          ${escapeHTML(error.message)}<br><br>
-          Coba tekan tombol refresh.
-        </div>
-      `;
-
-      matchCount.textContent = "Data tidak tersedia";
-    } finally {
-      loading = false;
-      refreshBtn.textContent = "↻";
-      refreshBtn.disabled = false;
-    }
+    matchCount.textContent = "Data tidak tersedia";
+  } finally {
+    loading = false;
+    refreshBtn.disabled = false;
+    refreshBtn.textContent = "↻ Refresh";
   }
+}
 
-  todayBtn.addEventListener("click", () => {
-    if (selectedDate === "today") return;
+document.querySelectorAll(".nav button").forEach(button => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".nav button")
+      .forEach(item => item.classList.remove("active"));
 
-    selectedDate = "today";
-    todayBtn.classList.add("active");
-    tomorrowBtn.classList.remove("active");
-    load();
+    button.classList.add("active");
+    currentView = button.dataset.view;
+    renderMatches();
   });
+});
 
-  tomorrowBtn.addEventListener("click", () => {
-    if (selectedDate === "tomorrow") return;
+refreshBtn.addEventListener("click", load);
+searchInput.addEventListener("input", renderMatches);
+leagueFilter.addEventListener("change", renderMatches);
+statusFilter.addEventListener("change", renderMatches);
 
-    selectedDate = "tomorrow";
-    tomorrowBtn.classList.add("active");
-    todayBtn.classList.remove("active");
-    load();
-  });
-
-  refreshBtn.addEventListener("click", load);
-
-  document.querySelectorAll(".nav button").forEach(button => {
-    button.addEventListener("click", () => {
-      document.querySelectorAll(".nav button").forEach(item =>
-        item.classList.remove("active")
-      );
-
-      button.classList.add("active");
-      currentView = button.dataset.view;
-      renderMatches();
-    });
-  });
-
-  searchInput.addEventListener("input", renderMatches);
-  leagueFilter.addEventListener("change", renderMatches);
-  statusFilter.addEventListener("change", renderMatches);
-
-  load();
-
-  // Refresh otomatis setiap 30 menit.
-  setInterval(() => {
-    load();
-  }, 30 * 60 * 1000);
+load();
+setInterval(load, 30 * 60 * 1000);
 </script>
-
 </body>
 </html>
