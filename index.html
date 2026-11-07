@@ -45,9 +45,20 @@ input,select{width:100%;min-width:0;padding:12px;border-radius:9px;border:1px so
 .team-name{font-size:13px;font-weight:bold;line-height:1.35;overflow-wrap:anywhere}
 .score{font-size:22px;font-weight:bold;text-align:center;white-space:nowrap}
 .kickoff{text-align:center;color:var(--muted);font-size:12px;margin-top:13px}
+.prediction{margin-top:15px;padding:12px;background:#0b1424;border:1px solid var(--line);border-radius:10px}
+.prediction-title{font-size:12px;font-weight:bold;margin-bottom:5px}
+.prediction-note{font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:12px}
+.probabilities{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.probability{text-align:center;padding:10px 4px;border-radius:8px;background:#142139}
+.probability strong{display:block;font-size:19px;margin-bottom:5px}
+.probability span{font-size:10px;color:var(--muted);line-height:1.3}
+.probability.home strong{color:var(--blue)}
+.probability.draw strong{color:#f5c45e}
+.probability.away strong{color:var(--green)}
+.no-prediction{font-size:12px;color:var(--muted);line-height:1.5}
 footer{border-top:1px solid var(--line);padding:20px 14px;color:var(--muted);font-size:12px;text-align:center;line-height:1.8}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px}
-@media(max-width:480px){h1{font-size:20px}.filters{grid-template-columns:1fr}.tabs button{font-size:12px}}
+@media(max-width:480px){h1{font-size:20px}.filters{grid-template-columns:1fr}.tabs button{font-size:12px}.probability strong{font-size:17px}}
 </style>
 </head>
 <body>
@@ -66,8 +77,8 @@ footer{border-top:1px solid var(--line);padding:20px 14px;color:var(--muted);fon
 
 <main>
   <nav class="tabs">
-    <button class="active" data-view="upcoming">Belum Main</button>
-    <button data-view="live">🔴 Sedang Main</button>
+    <button data-view="upcoming">Belum Main</button>
+    <button class="active" data-view="live">🔴 Sedang Main</button>
     <button data-view="finished">Selesai</button>
   </nav>
 
@@ -85,7 +96,7 @@ footer{border-top:1px solid var(--line);padding:20px 14px;color:var(--muted);fon
   </section>
 
   <div class="section-heading">
-    <h2 id="sectionTitle">Belum Main</h2>
+    <h2 id="sectionTitle">Sedang Main</h2>
     <span class="match-count" id="matchCount">Memuat...</span>
   </div>
 
@@ -97,6 +108,7 @@ footer{border-top:1px solid var(--line);padding:20px 14px;color:var(--muted);fon
 <footer>
   <div><span class="dot"></span> Waktu Indonesia Barat (WIB)</div>
   <div>Data pertandingan: API-Football</div>
+  <div>Prediksi LIVE: estimasi model sederhana, bukan hasil pasti.</div>
   <div>KickOff © 2026</div>
 </footer>
 
@@ -110,7 +122,7 @@ const matchCount=document.getElementById("matchCount");
 const sectionTitle=document.getElementById("sectionTitle");
 
 let fixtures=[];
-let currentView="upcoming";
+let currentView="live";
 let loading=false;
 
 const liveCodes=["1H","HT","2H","ET","BT","P","SUSP","INT","LIVE"];
@@ -206,6 +218,102 @@ function updateLeagueOptions(){
   }
 }
 
+/* Distribusi Poisson untuk estimasi gol tersisa. */
+function poisson(lambda,k){
+  let result=Math.exp(-lambda);
+  for(let i=1;i<=k;i++) result*=lambda/i;
+  return result;
+}
+
+/*
+  Estimasi sederhana berdasarkan skor saat ini dan waktu tersisa.
+  Angka dasar adalah asumsi model, bukan statistik pertandingan.
+*/
+function calculatePrediction(match){
+  const code=match.fixture.status.short;
+  const elapsed=match.fixture.status.elapsed;
+  const homeScore=match.goals.home;
+  const awayScore=match.goals.away;
+
+  if(!liveCodes.includes(code) ||
+     elapsed===null || elapsed===undefined ||
+     homeScore===null || awayScore===null ||
+     code==="P" || code==="ET" || code==="BT" ||
+     code==="SUSP" || code==="INT"){
+    return null;
+  }
+
+  const totalMinutes=90;
+  const remaining=Math.max(0,totalMinutes-Math.min(elapsed,totalMinutes));
+
+  // Asumsi rata-rata gol model, bukan data statistik aktual.
+  const homeLambda=1.35*(remaining/90);
+  const awayLambda=1.05*(remaining/90);
+
+  let homeWin=0,draw=0,awayWin=0;
+
+  for(let h=0;h<=8;h++){
+    for(let a=0;a<=8;a++){
+      const probability=poisson(homeLambda,h)*poisson(awayLambda,a);
+      const finalHome=homeScore+h;
+      const finalAway=awayScore+a;
+
+      if(finalHome>finalAway) homeWin+=probability;
+      else if(finalHome===finalAway) draw+=probability;
+      else awayWin+=probability;
+    }
+  }
+
+  const total=homeWin+draw+awayWin;
+  if(!total) return null;
+
+  const values=[
+    Math.round(homeWin/total*100),
+    Math.round(draw/total*100),
+    0
+  ];
+  values[2]=100-values[0]-values[1];
+
+  return values;
+}
+
+function predictionHTML(match){
+  const values=calculatePrediction(match);
+
+  if(!values){
+    return `
+      <div class="prediction">
+        <div class="prediction-title">📊 Estimasi hasil pertandingan</div>
+        <div class="no-prediction">
+          Estimasi belum tersedia untuk status atau data pertandingan ini.
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="prediction">
+      <div class="prediction-title">📊 Estimasi hasil pertandingan</div>
+      <div class="prediction-note">
+        Model sederhana berdasarkan skor dan waktu tersisa.
+        Bukan prediksi pasti dan belum memakai statistik tembakan atau penguasaan bola.
+      </div>
+      <div class="probabilities">
+        <div class="probability home">
+          <strong>${values[0]}%</strong>
+          <span>Menang kandang</span>
+        </div>
+        <div class="probability draw">
+          <strong>${values[1]}%</strong>
+          <span>Seri</span>
+        </div>
+        <div class="probability away">
+          <strong>${values[2]}%</strong>
+          <span>Menang tandang</span>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderMatches(){
   const search=searchInput.value.toLowerCase().trim();
   const selectedLeague=leagueFilter.value;
@@ -266,6 +374,7 @@ function renderMatches(){
         ${escapeHTML(getTime(match))}
         ${match.fixture.venue?.name?" · "+escapeHTML(match.fixture.venue.name):""}
       </div>
+      ${status.type==="live"?predictionHTML(match):""}
     </article>`;
   }).join("");
 }
