@@ -229,19 +229,70 @@ function poisson(lambda,k){
   Estimasi sederhana berdasarkan skor saat ini dan waktu tersisa.
   Angka dasar adalah asumsi model, bukan statistik pertandingan.
 */
+
 function calculatePrediction(match){
   const code=match.fixture.status.short;
   const elapsed=match.fixture.status.elapsed;
   const homeScore=match.goals.home;
   const awayScore=match.goals.away;
 
-  if(!liveCodes.includes(code) ||
-     elapsed===null || elapsed===undefined ||
-     homeScore===null || awayScore===null ||
-     code==="P" || code==="ET" || code==="BT" ||
-     code==="SUSP" || code==="INT"){
+  // Hanya menghitung pertandingan yang sedang berlangsung.
+  if(
+    !liveCodes.includes(code) ||
+    elapsed===null || elapsed===undefined ||
+    !Number.isFinite(Number(elapsed)) ||
+    homeScore===null || homeScore===undefined ||
+    awayScore===null || awayScore===undefined ||
+    !Number.isFinite(Number(homeScore)) ||
+    !Number.isFinite(Number(awayScore)) ||
+    ["P","BT","SUSP","INT"].includes(code)
+  ){
     return null;
   }
+
+  // Waktu normal 90 menit, extra time 120 menit.
+  const totalMinutes=code==="ET"?120:90;
+
+  const remaining=Math.max(
+    0,
+    totalMinutes-Math.min(Number(elapsed),totalMinutes)
+  );
+
+  // Asumsi rata-rata gol model, bukan statistik aktual.
+  const homeLambda=1.35*(remaining/90);
+  const awayLambda=1.05*(remaining/90);
+
+  let homeWin=0;
+  let draw=0;
+  let awayWin=0;
+
+  for(let h=0;h<=8;h++){
+    for(let a=0;a<=8;a++){
+      const probability=
+        poisson(homeLambda,h)*poisson(awayLambda,a);
+
+      const finalHome=Number(homeScore)+h;
+      const finalAway=Number(awayScore)+a;
+
+      if(finalHome>finalAway){
+        homeWin+=probability;
+      }else if(finalHome===finalAway){
+        draw+=probability;
+      }else{
+        awayWin+=probability;
+      }
+    }
+  }
+
+  const total=homeWin+draw+awayWin;
+  if(!total)return null;
+
+  const home=Math.round(homeWin/total*100);
+  const drawPercent=Math.round(draw/total*100);
+  const away=100-home-drawPercent;
+
+  return [home,drawPercent,away];
+}
 
   const totalMinutes=90;
   const remaining=Math.max(0,totalMinutes-Math.min(elapsed,totalMinutes));
