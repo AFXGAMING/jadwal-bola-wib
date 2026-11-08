@@ -1,11 +1,16 @@
-// Server-side proxy: API key stays in Netlify environment variables.
+
+// Server-side proxy with 30-minute CDN cache.
+// API key stays in Netlify environment variables.
 exports.handler = async (event) => {
   const key = process.env.API_FOOTBALL_KEY;
 
   if (!key) {
     return {
       statusCode: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+      },
       body: JSON.stringify({
         error: "API_FOOTBALL_KEY belum diatur di Netlify."
       })
@@ -18,7 +23,10 @@ exports.handler = async (event) => {
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return {
       statusCode: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+      },
       body: JSON.stringify({
         error: "Parameter date harus berformat YYYY-MM-DD."
       })
@@ -41,14 +49,21 @@ exports.handler = async (event) => {
       statusCode: response.status,
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": response.ok
+          ? "public, max-age=0, s-maxage=1800, stale-while-revalidate=300"
+          : "no-store"
       },
       body: JSON.stringify(data)
     };
+
   } catch (error) {
     return {
       statusCode: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+      },
       body: JSON.stringify({
         error: "Gagal mengambil jadwal pertandingan.",
         detail: error.message
