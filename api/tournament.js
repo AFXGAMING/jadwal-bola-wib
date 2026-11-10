@@ -148,3 +148,91 @@ module.exports = async (req, res) => {
     });
   }
 };
+
+
+
+module.exports = async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+
+  const key = process.env.API_NINJAS_KEY;
+
+  if (!key) {
+    return res.status(500).json({
+      error: "API_NINJAS_KEY belum diatur di Vercel."
+    });
+  }
+
+  const league = req.query?.league;
+  const season = req.query?.season || "2026";
+  const offset = req.query?.offset || "0";
+
+  const allowedLeagues = [
+    "facup",
+    "eflcup",
+    "copadelrey",
+    "dfbpokal",
+    "coppaitalia",
+    "coupedefrance",
+    "ucl",
+    "uel",
+    "uecl",
+    "libertadores",
+    "clubworldcup",
+    "worldcup",
+    "asiancup",
+    "afcon",
+    "euro"
+  ];
+
+  if (!allowedLeagues.includes(league)) {
+    return res.status(400).json({
+      error: "Kompetisi tidak didukung."
+    });
+  }
+
+  if (!/^\d{4}$/.test(season) || !/^\d+$/.test(offset)) {
+    return res.status(400).json({
+      error: "Parameter season atau offset tidak valid."
+    });
+  }
+
+  try {
+    const url = new URL(
+      "https://api.api-ninjas.com/v1/soccermatches"
+    );
+
+    url.searchParams.set("league", league);
+    url.searchParams.set("season", season);
+    url.searchParams.set("offset", offset);
+
+    const response = await fetch(url, {
+      headers: {
+        "X-Api-Key": key
+      }
+    });
+
+    const raw = await response.text();
+
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = { error: raw };
+    }
+
+    res.setHeader(
+      "Cache-Control",
+      response.ok
+        ? "public, max-age=0, s-maxage=1800, stale-while-revalidate=300"
+        : "no-store"
+    );
+
+    return res.status(response.status).json(data);
+
+  } catch (error) {
+    return res.status(500).json({
+      error: "Gagal mengambil data turnamen.",
+      detail: error.message
+    });
+  }
+};
