@@ -1,0 +1,299 @@
+const FIXTURES_API = "/api/fixtures";
+const STANDINGS_API = "/api/standings";
+
+const matchesEl = document.getElementById("matches");
+const refreshBtn = document.getElementById("refreshBtn");
+const searchInput = document.getElementById("searchInput");
+const genderFilter = document.getElementById("genderFilter");
+const leagueFilter = document.getElementById("leagueFilter");
+const matchCount = document.getElementById("matchCount");
+const sectionTitle = document.getElementById("sectionTitle");
+
+const matchesView = document.getElementById("matchesView");
+const standingsView = document.getElementById("standingsView");
+const standingsLeagueSelect = document.getElementById("standingsLeagueSelect");
+const loadStandingsBtn = document.getElementById("loadStandingsBtn");
+const standingsContainer = document.getElementById("standingsContainer");
+
+let fixtures = [];
+let currentView = "live";
+let loading = false;
+let favorites = JSON.parse(localStorage.getItem("kickoff_favorites")) || [];
+
+const liveCodes = ["1H", "HT", "2H", "ET", "BT", "P", "SUSP", "INT", "LIVE"];
+const finishedCodes = ["FT", "AET", "PEN"];
+
+function getJakartaDate() {
+  const p = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric", month: "2-digit", day: "2-digit"
+  }).formatToParts(new Date());
+  const v = {};
+  p.forEach(x => v[x.type] = x.value);
+  return `${v.year}-${v.month}-${v.day}`;
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[c]);
+}
+
+function getStatus(match) {
+  const code = match.fixture.status.short;
+  const elapsed = match.fixture.status.elapsed;
+  if (liveCodes.includes(code)) return { label: (elapsed != null ? `${elapsed}' LIVE` : "LIVE"), type: "live" };
+  if (finishedCodes.includes(code)) return { label: "SELESAI", type: "finished" };
+  if (["NS", "TBD"].includes(code)) return { label: "BELUM MAIN", type: "upcoming" };
+  return { label: code, type: "other" };
+}
+
+function isWomenMatch(match) {
+  return /women'?s?|feminine|female|ladies|girls|女/i.test([match.league?.name, match.teams?.home?.name, match.teams?.away?.name].join(" ").toLowerCase());
+}
+
+function getGender(match) { return isWomenMatch(match) ? "women" : "men"; }
+
+function getTime(match) {
+  return new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(match.fixture.date)) + " WIB";
+}
+
+function getSubScore(match) {
+  if (match.score?.penalty?.home !== null) return `PEN: ${match.score.penalty.home} - ${match.score.penalty.away}`;
+  if (match.score?.halftime?.home !== null) return `HT: ${match.score.halftime.home} - ${match.score.halftime.away}`;
+  return "";
+}
+
+function updateLeagueOptions() {
+  const previous = leagueFilter.value;
+  const leagues = [...new Map(fixtures.map(m => [
+    m.league.id, { id: m.league.id, name: m.league.name, season: m.league.season }
+  ])).values()].sort((a, b) => a.name.localeCompare(b.name));
+
+  leagueFilter.innerHTML = '<option value="all">Semua Kompetisi</option>';
+  leagues.forEach(l => {
+    const opt = document.createElement("option");
+    opt.value = String(l.id);
+    opt.textContent = l.name;
+    leagueFilter.appendChild(opt);
+  });
+  if ([...leagueFilter.options].some(o => o.value === previous)) leagueFilter.value = previous;
+
+  standingsLeagueSelect.innerHTML = '<option value="">Pilih Kompetisi...</option>';
+  leagues.forEach(l => {
+    const opt = document.createElement("option");
+    opt.value = `${l.id}-${l.season}`;
+    opt.textContent = l.name;
+    standingsLeagueSelect.appendChild(opt);
+  });
+}
+
+function poisson(lambda, k) {
+  let result = Math.exp(-lambda);
+  for (let i = 1; i <= k; i++) result *= lambda / i;
+  return result;
+}
+
+function calculatePrediction(match) {
+  const code = match.fixture.status.short;
+  const elapsed = match.fixture.status.elapsed;
+  const homeScore = match.goals.home;
+  const awayScore = match.goals.away;
+
+  if (
+    !liveCodes.includes(code) || elapsed === null || elapsed === undefined ||
+    !Number.isFinite(Number(elapsed)) || homeScore === null || homeScore === undefined ||
+    awayScore === null || awayScore === undefined ||
+    !Number.isFinite(Number(homeScore)) || !Number.isFinite(Number(awayScore)) ||
+    ["P", "BT", "SUSP", "INT"].includes(code)
+  ) return null;
+
+  const totalMinutes = code === "ET" ? 120 : 90;
+  const remaining = Math.max(0, totalMinutes - Math.min(Number(elapsed), totalMinutes));
+  const homeLambda = 1.35 * (remaining / 90);
+  const awayLambda = 1.05 * (remaining / 90);
+
+  let homeWin = 0, draw = 0, awayWin = 0;
+  for (let h = 0; h <= 8; h++) {
+    for (let a = 0; a <= 8; a++) {
+      const prob = poisson(homeLambda, h) * poisson(awayLambda, a);
+      const fH = Number(homeScore) + h;
+      const fA = Number(awayScore) + a;
+      if (fH > fA) homeWin += prob;
+      else if (fH === fA) draw += prob;
+      else awayWin += prob;
+    }
+  }
+
+  const total = homeWin + draw + awayWin;
+  if (!total) return null;
+  const home = Math.round(homeWin / total * 100);
+  const drawPercent = Math.round(draw / total * 100);
+  return [home, drawPercent, 100 - home - drawPercent];
+}
+
+function predictionHTML(match) {
+  const status = getStatus(match);
+  if (status.type === "upcoming") {
+    return `<div class="prediction"><div class="prediction-title">📊 Estimasi hasil pertandingan</div><div class="no-prediction">Estimasi otomatis akan tersedia setelah pertandingan dimulai (LIVE).</div></div>`;
+  }
+  if (status.type !== "live") return "";
+
+  const values = calculatePrediction(match);
+  if (!values) return `<div class="prediction"><div class="prediction-title">📊 Estimasi hasil pertandingan</div><div class="no-prediction">Estimasi belum tersedia untuk status atau data pertandingan ini.</div></div>`;
+
+  return `
+    <div class="prediction">
+      <div class="prediction-title">📊 Estimasi hasil pertandingan</div>
+      <div class="prediction-note">Model sederhana berdasarkan skor dan waktu tersisa. Bukan prediksi pasti dan belum memakai statistik tembakan atau penguasaan bola.</div>
+      <div class="probabilities">
+        <div class="probability home"><strong>${values[0]}%</strong><span>Menang kandang</span></div>
+        <div class="probability draw"><strong>${values[1]}%</strong><span>Seri</span></div>
+        <div class="probability away"><strong>${values[2]}%</strong><span>Menang tandang</span></div>
+      </div>
+    </div>`;
+}
+
+function toggleFavorite(id) {
+  favorites = favorites.includes(id) ? favorites.filter(fId => fId !== id) : [...favorites, id];
+  localStorage.setItem("kickoff_favorites", JSON.stringify(favorites));
+  renderMatches();
+}
+
+matchesEl.addEventListener("click", (e) => {
+  if (e.target.classList.contains("star-btn")) toggleFavorite(parseInt(e.target.dataset.teamId, 10));
+});
+
+function renderMatches() {
+  const search = searchInput.value.toLowerCase().trim();
+  const selL = leagueFilter.value;
+  const selG = genderFilter.value;
+
+  const filtered = fixtures.filter(m => {
+    const s = !search || m.teams.home.name.toLowerCase().includes(search) || m.teams.away.name.toLowerCase().includes(search) || m.league.name.toLowerCase().includes(search);
+    const l = selL === "all" || String(m.league.id) === selL;
+    const g = selG === "all" || getGender(m) === selG;
+    return s && l && g && getStatus(m).type === currentView;
+  }).sort((a, b) => {
+    const aF = favorites.includes(a.teams.home.id) || favorites.includes(a.teams.away.id);
+    const bF = favorites.includes(b.teams.home.id) || favorites.includes(b.teams.away.id);
+    if (aF && !bF) return -1;
+    if (!aF && bF) return 1;
+    return new Date(a.fixture.date) - new Date(b.fixture.date);
+  });
+
+  matchCount.textContent = `${filtered.length} pertandingan`;
+  if (!filtered.length) {
+    matchesEl.innerHTML = '<div class="empty">Belum ada pertandingan dalam kategori ini.</div>';
+    return;
+  }
+
+  matchesEl.innerHTML = filtered.map(match => {
+    const status = getStatus(match);
+    const hasScore = match.goals.home !== null && match.goals.away !== null;
+    const homeStar = `<span class="star-btn ${favorites.includes(match.teams.home.id) ? 'active' : ''}" data-team-id="${match.teams.home.id}">★</span>`;
+    const awayStar = `<span class="star-btn ${favorites.includes(match.teams.away.id) ? 'active' : ''}" data-team-id="${match.teams.away.id}">★</span>`;
+    const subHTML = getSubScore(match) ? `<div class="sub-score">${escapeHTML(getSubScore(match))}</div>` : "";
+
+    return `
+    <article class="match-card">
+      <div class="match-top">
+        <div class="league">${match.league.logo ? `<img src="${escapeHTML(match.league.logo)}" loading="lazy">` : ""}<span>${escapeHTML(match.league.name)}</span></div>
+        <span class="status ${status.type}">${escapeHTML(status.label)}</span>
+      </div>
+      <div class="teams">
+        <div class="team">${match.teams.home.logo ? `<img src="${escapeHTML(match.teams.home.logo)}" loading="lazy">` : ""}<div class="team-name">${escapeHTML(match.teams.home.name)} ${homeStar}</div></div>
+        <div class="score-wrapper"><div class="score">${escapeHTML(hasScore ? `${match.goals.home} - ${match.goals.away}` : "VS")}</div>${subHTML}</div>
+        <div class="team">${match.teams.away.logo ? `<img src="${escapeHTML(match.teams.away.logo)}" loading="lazy">` : ""}<div class="team-name">${escapeHTML(match.teams.away.name)} ${awayStar}</div></div>
+      </div>
+      <div class="kickoff">${escapeHTML(getTime(match))}</div>
+      ${["live", "upcoming"].includes(status.type) ? predictionHTML(match) : ""}
+    </article>`;
+  }).join("");
+}
+
+function setView(view) {
+  if (view === "standings") {
+    matchesView.style.display = "none";
+    standingsView.style.display = "block";
+  } else {
+    currentView = view;
+    matchesView.style.display = "block";
+    standingsView.style.display = "none";
+    const titles = { upcoming: "Belum Main", live: "Sedang Main", finished: "Selesai" };
+    sectionTitle.textContent = titles[view];
+    renderMatches();
+  }
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+}
+
+async function fetchStandings() {
+  const val = standingsLeagueSelect.value;
+  if (!val) return;
+  const [leagueId, season] = val.split("-");
+
+  standingsContainer.innerHTML = '<div class="status-message">Mengambil klasemen liga...</div>';
+
+  try {
+    const res = await fetch(`${STANDINGS_API}?league=${leagueId}&season=${season}`);
+    const data = await res.json();
+
+    if(!data.response || data.response.length === 0) {
+       standingsContainer.innerHTML = '<div class="empty">Klasemen tidak tersedia untuk kompetisi ini (mungkin turnamen sistem gugur).</div>';
+       return;
+    }
+
+    const standings = data.response[0].league.standings[0];
+
+    let tableHTML = `<div class="standings-card"><table class="standings-table">
+      <thead><tr><th>#</th><th class="left">Klub</th><th>MN</th><th>M</th><th>S</th><th>K</th><th>SG</th><th>PT</th></tr></thead><tbody>`;
+
+    standings.forEach(team => {
+       tableHTML += `<tr>
+           <td>${team.rank}</td>
+           <td class="left"><div class="team-cell"><img src="${team.team.logo}"><span class="team-name">${team.team.name}</span></div></td>
+           <td>${team.all.played}</td><td>${team.all.win}</td><td>${team.all.draw}</td><td>${team.all.lose}</td>
+           <td>${team.goalsDiff}</td><td><strong>${team.points}</strong></td>
+         </tr>`;
+    });
+    tableHTML += `</tbody></table></div>`;
+    standingsContainer.innerHTML = tableHTML;
+
+  } catch (err) {
+    standingsContainer.innerHTML = `<div class="empty">Gagal memuat klasemen.</div>`;
+  }
+}
+
+async function load() {
+  if (loading) return;
+  loading = true;
+  refreshBtn.disabled = true;
+  refreshBtn.textContent = "Memuat...";
+
+  matchesEl.innerHTML = Array(5).fill(`<article class="skeleton-card"><div class="skeleton-box skel-top"></div><div class="teams"><div class="team"><div class="skeleton-box skel-team"></div><div class="skeleton-box skel-name"></div></div><div class="score-wrapper"><div class="skeleton-box skel-score"></div></div><div class="team"><div class="skeleton-box skel-team"></div><div class="skeleton-box skel-name"></div></div></div><div class="skeleton-box skel-bottom"></div></article>`).join("");
+
+  try {
+    const res = await fetch(`${FIXTURES_API}?date=${encodeURIComponent(getJakartaDate())}`, { cache: "no-store" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Server ${res.status}`);
+    fixtures = data.response.filter(m => m && m.fixture && m.teams && m.league);
+    updateLeagueOptions();
+    renderMatches();
+  } catch (error) {
+    matchesEl.innerHTML = `<div class="status-message">Gagal mengambil jadwal.<br>${escapeHTML(error.message)}</div>`;
+  } finally {
+    loading = false;
+    refreshBtn.disabled = false;
+    refreshBtn.textContent = "↻ Refresh";
+  }
+}
+
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
+refreshBtn.addEventListener("click", load);
+searchInput.addEventListener("input", renderMatches);
+genderFilter.addEventListener("change", renderMatches);
+leagueFilter.addEventListener("change", renderMatches);
+loadStandingsBtn.addEventListener("click", fetchStandings);
+
+load();
+setInterval(load, 60 * 60 * 1000);
