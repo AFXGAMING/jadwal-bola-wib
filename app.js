@@ -227,42 +227,110 @@ function setView(view) {
   document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
 }
 
+
 async function fetchStandings() {
   const val = standingsLeagueSelect.value;
   if (!val) return;
-  const [leagueId, season] = val.split("-");
 
-  standingsContainer.innerHTML = '<div class="status-message">Mengambil klasemen liga...</div>';
+  const selected = standingsLeagueSelect.selectedOptions[0];
+  const name = selected.textContent.trim().toLowerCase();
+
+  const leagueMap = [
+    { match: /premier league/, code: "epl" },
+    { match: /la liga|primera division/, code: "laliga" },
+    { match: /bundesliga/, code: "bundesliga" },
+    { match: /serie a/, code: "seriea" },
+    { match: /ligue 1/, code: "ligue1" },
+    { match: /champions league/, code: "ucl" },
+    { match: /europa league/, code: "uel" },
+    { match: /major league soccer|mls/, code: "mls" }
+  ];
+
+  const found = leagueMap.find(item => item.match.test(name));
+
+  if (!found) {
+    standingsContainer.innerHTML =
+      '<div class="empty">Kompetisi ini belum didukung sumber klasemen.</div>';
+    return;
+  }
+
+  standingsContainer.innerHTML =
+    '<div class="status-message">Mengambil klasemen musim berjalan...</div>';
 
   try {
-    const res = await fetch(`${STANDINGS_API}?league=${leagueId}&season=${season}`);
+    const res = await fetch(
+      `${STANDINGS_API}?league=${found.code}`
+    );
+
     const data = await res.json();
 
-    if(!data.response || data.response.length === 0) {
-       standingsContainer.innerHTML = '<div class="empty">Klasemen tidak tersedia untuk kompetisi ini (mungkin turnamen sistem gugur).</div>';
-       return;
+    if (!res.ok) {
+      throw new Error(data.error || "Gagal mengambil klasemen.");
     }
 
-    const standings = data.response[0].league.standings[0];
+    if (!Array.isArray(data.response) || data.response.length === 0) {
+      standingsContainer.innerHTML =
+        '<div class="empty">Data klasemen belum tersedia.</div>';
+      return;
+    }
 
-    let tableHTML = `<div class="standings-card"><table class="standings-table">
-      <thead><tr><th>#</th><th class="left">Klub</th><th>MN</th><th>M</th><th>S</th><th>K</th><th>SG</th><th>PT</th></tr></thead><tbody>`;
+    const standings = data.response;
+    const seasonLabel = data.season_label || "Musim berjalan";
+
+    let tableHTML = `
+      <div class="standings-card">
+        <div class="status-message">${escapeHTML(seasonLabel)}</div>
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th class="left">Klub</th>
+              <th>MN</th>
+              <th>M</th>
+              <th>S</th>
+              <th>K</th>
+              <th>SG</th>
+              <th>PT</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
 
     standings.forEach(team => {
-       tableHTML += `<tr>
-           <td>${team.rank}</td>
-           <td class="left"><div class="team-cell"><img src="${team.team.logo}"><span class="team-name">${team.team.name}</span></div></td>
-           <td>${team.all.played}</td><td>${team.all.win}</td><td>${team.all.draw}</td><td>${team.all.lose}</td>
-           <td>${team.goalsDiff}</td><td><strong>${team.points}</strong></td>
-         </tr>`;
+      const t = team.team || {};
+
+      tableHTML += `
+        <tr>
+          <td>${team.league_rank ?? "-"}</td>
+          <td class="left">
+            <div class="team-cell">
+              <span class="team-name">${escapeHTML(t.name || "Klub")}</span>
+            </div>
+          </td>
+          <td>${team.games_played ?? 0}</td>
+          <td>${team.wins ?? 0}</td>
+          <td>${team.draws ?? 0}</td>
+          <td>${team.losses ?? 0}</td>
+          <td>${team.goal_difference ?? 0}</td>
+          <td><strong>${team.points ?? 0}</strong></td>
+        </tr>
+      `;
     });
-    tableHTML += `</tbody></table></div>`;
+
+    tableHTML += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
     standingsContainer.innerHTML = tableHTML;
 
   } catch (err) {
-    standingsContainer.innerHTML = `<div class="empty">Gagal memuat klasemen.</div>`;
+    standingsContainer.innerHTML =
+      `<div class="empty">${escapeHTML(err.message || "Gagal memuat klasemen.")}</div>`;
   }
 }
+
 
 async function load() {
   if (loading) return;
