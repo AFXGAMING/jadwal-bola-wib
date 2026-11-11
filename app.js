@@ -321,52 +321,41 @@ function renderTournament(hasMore = false) {
   };
 
   const matchCard = match => {
-    const home = match.home_team?.name || "TBD";
-    const away = match.away_team?.name || "TBD";
+  const home = match.home_team?.name || "TBD";
+  const away = match.away_team?.name || "TBD";
 
-    const scored =
-      hasValue(match.home_score) &&
-      hasValue(match.away_score);
+  const hasScore = value =>
+    value !== null && value !== undefined && value !== "";
 
-    const score = scored
-      ? `${match.home_score} - ${match.away_score}`
-      : "VS";
+  const homeScore = hasScore(match.home_score)
+    ? String(match.home_score)
+    : "-";
 
-    const statusMap = {
-      scheduled: "Belum dimainkan",
-      final: "Selesai",
-      in_progress: "Berlangsung"
-    };
+  const awayScore = hasScore(match.away_score)
+    ? String(match.away_score)
+    : "-";
 
-    const status = statusMap[match.status] || match.status || "Status tidak tersedia";
+  const marker =
+    match.decided_in === "penalties" ? " ET/P" :
+    match.decided_in === "extra_time" ? " ET" : "";
 
-    let details = "";
+  return `
+    <article class="tournament-match">
+      <div class="tournament-match-info">
+        ${escapeHTML(formatDate(match))}
+      </div>
 
-    if (match.decided_in === "extra_time") {
-      details += "<span>Extra Time</span>";
-    }
+      <div class="tournament-team-row">
+        <span>${escapeHTML(home)}</span>
+        <strong>${escapeHTML(homeScore)}</strong>
+      </div>
 
-    if (match.decided_in === "penalties" && match.penalty_scores) {
-      details += `<span>Penalti: ${match.penalty_scores.home} - ${match.penalty_scores.away}</span>`;
-    }
-
-    if (match.aggregate_scores) {
-      details += `<span>Agregat: ${match.aggregate_scores.home} - ${match.aggregate_scores.away}</span>`;
-    }
-
-    return `
-  <article class="tournament-match">
-    <div class="tournament-team-row">
-      <span>${escapeHTML(home)}</span>
-      <strong>${escapeHTML(String(scored ? match.home_score : "-"))}</strong>
-    </div>
-
-    <div class="tournament-team-row">
-      <span>${escapeHTML(away)}</span>
-      <strong>${escapeHTML(String(scored ? match.away_score : "-"))}</strong>
-    </div>
-  </article>
-`;
+      <div class="tournament-team-row">
+        <span>${escapeHTML(away)}</span>
+        <strong>${escapeHTML(awayScore + marker)}</strong>
+      </div>
+    </article>
+  `;
 };
 
   let html = `
