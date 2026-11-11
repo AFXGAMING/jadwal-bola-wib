@@ -1,4 +1,5 @@
-# Local Netlify folder
-.netlify
+# Vercel local files
 .vercel
+
+# Environment variables and secrets
 .env*
