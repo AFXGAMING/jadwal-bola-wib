@@ -26,6 +26,7 @@
     <button class="active" data-view="live">🔴 Sedang Main</button>
     <button data-view="finished">Selesai</button>
     <button data-view="standings">🏆 Klasemen</button>
+    <button data-view="tournament">🏆 Turnamen</button>
   </nav>
 
   <div id="matchesView">
@@ -74,6 +75,42 @@
       <div class="empty">Silakan pilih liga dan tekan "Lihat" untuk memuat klasemen.</div>
     </section>
   </div>
+
+<div id="tournamentView" style="display: none;">
+  <section class="toolbar">
+    <div class="date-row">
+      <div class="date-label">🏆 Bagan Turnamen</div>
+    </div>
+
+    <div style="display:flex; gap:8px;">
+      <select id="tournamentLeagueSelect" style="flex:1;">
+        <option value="facup">FA Cup</option>
+        <option value="eflcup">EFL Cup</option>
+        <option value="copadelrey">Copa del Rey</option>
+        <option value="dfbpokal">DFB-Pokal</option>
+        <option value="coppaitalia">Coppa Italia</option>
+        <option value="coupedefrance">Coupe de France</option>
+        <option value="ucl">Liga Champions</option>
+        <option value="uel">Europa League</option>
+        <option value="uecl">Conference League</option>
+        <option value="libertadores">Copa Libertadores</option>
+        <option value="worldcup">Piala Dunia</option>
+        <option value="euro">Euro</option>
+      </select>
+
+      <button id="loadTournamentBtn"
+        style="background:var(--blue);color:white;border:none;border-radius:9px;padding:0 15px;font-weight:bold;">
+        Lihat
+      </button>
+    </div>
+  </section>
+
+  <section id="tournamentContainer">
+    <div class="empty">
+      Pilih kompetisi untuk melihat bagan turnamen.
+    </div>
+  </section>
+</div>
 </main>
 
 <footer>

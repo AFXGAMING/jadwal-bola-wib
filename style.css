@@ -76,3 +76,113 @@ footer{border-top:1px solid var(--line);padding:20px 14px;color:var(--muted);fon
 .standings-table .team-cell{display:flex;align-items:center;gap:8px}
 .standings-table .team-cell img{width:18px;height:18px;object-fit:contain}
 .standings-table .team-name{max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* TOURNAMENT BRACKET */
+.tournament-scroll {
+  width: 100%;
+  overflow-x: auto;
+  padding: 12px 2px 18px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--blue) var(--panel);
+}
+
+.tournament-bracket {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  width: max-content;
+  min-width: 100%;
+}
+
+.tournament-round {
+  width: 245px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tournament-round h3 {
+  color: var(--blue);
+  font-size: 14px;
+  text-align: center;
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.tournament-match {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.tournament-match-info,
+.tournament-status {
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+
+.tournament-team-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tournament-team-row span {
+  overflow-wrap: anywhere;
+}
+
+.tournament-team-row strong {
+  color: white;
+  font-size: 15px;
+}
+
+.tournament-score {
+  color: var(--blue);
+  font-weight: bold;
+  font-size: 13px;
+  text-align: center;
+  margin: 10px 0 6px;
+}
+
+.tournament-status {
+  text-align: center;
+  margin-bottom: 0;
+}
+
+.tournament-details {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+  color: #f5c45e;
+  font-size: 11px;
+  text-align: center;
+}
+
+#loadMoreTournament {
+  display: block;
+  margin: 12px auto;
+  padding: 12px 18px;
+  cursor: pointer;
+}
+
+@media(max-width:480px) {
+  .tournament-round {
+    width: 220px;
+  }
+
+  .tournament-bracket {
+    gap: 12px;
+  }
+}

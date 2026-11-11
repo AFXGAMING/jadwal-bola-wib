@@ -15,7 +15,16 @@ const standingsLeagueSelect = document.getElementById("standingsLeagueSelect");
 const loadStandingsBtn = document.getElementById("loadStandingsBtn");
 const standingsContainer = document.getElementById("standingsContainer");
 
+const TOURNAMENT_API = "/api/tournament";
+const tournamentView = document.getElementById("tournamentView");
+const tournamentLeagueSelect = document.getElementById("tournamentLeagueSelect");
+const loadTournamentBtn = document.getElementById("loadTournamentBtn");
+const tournamentContainer = document.getElementById("tournamentContainer");
+
 let fixtures = [];
+let tournamentMatches = [];
+let tournamentOffset = 0;
+let tournamentLoading = false;
 let currentView = "live";
 let loading = false;
 let favorites = JSON.parse(localStorage.getItem("kickoff_favorites")) || [];
@@ -212,21 +221,237 @@ function renderMatches() {
   }).join("");
 }
 
-function setView(view) {
-  if (view === "standings") {
-    matchesView.style.display = "none";
-    standingsView.style.display = "block";
-  } else {
-    currentView = view;
-    matchesView.style.display = "block";
-    standingsView.style.display = "none";
-    const titles = { upcoming: "Belum Main", live: "Sedang Main", finished: "Selesai" };
-    sectionTitle.textContent = titles[view];
-    renderMatches();
+
+async function fetchTournament(loadMore = false) {
+  if (tournamentLoading) return;
+
+  const league = tournamentLeagueSelect.value;
+  const season = "2026";
+
+  if (!loadMore) {
+    tournamentOffset = 0;
+    tournamentMatches = [];
+    tournamentContainer.dataset.loaded = "";
   }
-  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+
+  tournamentLoading = true;
+
+  tournamentContainer.innerHTML = loadMore
+    ? '<div class="status-message">Mengambil pertandingan berikutnya...</div>'
+    : '<div class="status-message">Mengambil data turnamen...</div>';
+
+  try {
+    const url = `${TOURNAMENT_API}?league=${encodeURIComponent(league)}&season=${season}&offset=${tournamentOffset}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `Server ${response.status}`);
+    }
+
+    const page = Array.isArray(data)
+      ? data
+      : Array.isArray(data.matches)
+        ? data.matches
+        : [];
+
+    tournamentMatches.push(...page);
+    tournamentOffset += page.length;
+
+    tournamentContainer.dataset.loaded = "true";
+
+    renderTournament(page.length === 50);
+
+  } catch (error) {
+    tournamentContainer.innerHTML =
+      `<div class="status-message">Gagal mengambil turnamen.<br>${escapeHTML(error.message)}</div>`;
+  } finally {
+    tournamentLoading = false;
+  }
 }
 
+function renderTournament(hasMore = false) {
+  if (!tournamentMatches.length) {
+    tournamentContainer.innerHTML =
+      '<div class="empty">Belum ada data pertandingan turnamen.</div>';
+    return;
+  }
+
+  const rounds = new Map();
+
+  tournamentMatches.forEach(match => {
+    if (
+      match.season_type &&
+      match.season_type !== "knockout"
+    ) return;
+
+    const round = match.round || "Babak lainnya";
+
+    if (!rounds.has(round)) {
+      rounds.set(round, []);
+    }
+
+    rounds.get(round).push(match);
+  });
+
+  if (!rounds.size) {
+    tournamentContainer.innerHTML =
+      '<div class="empty">Data babak gugur belum tersedia.</div>';
+    return;
+  }
+
+  const hasValue = value =>
+    value !== null && value !== undefined && value !== "";
+
+  const formatDate = match => {
+    const value = match.start_time || match.date;
+    if (!value) return "Tanggal belum tersedia";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return escapeHTML(match.date || value);
+    }
+
+    return new Intl.DateTimeFormat("id-ID", {
+      timeZone: "Asia/Jakarta",
+      dateStyle: "medium",
+      timeStyle: match.start_time ? "short" : undefined
+    }).format(date) + (match.start_time ? " WIB" : "");
+  };
+
+  const matchCard = match => {
+    const home = match.home_team?.name || "TBD";
+    const away = match.away_team?.name || "TBD";
+
+    const scored =
+      hasValue(match.home_score) &&
+      hasValue(match.away_score);
+
+    const score = scored
+      ? `${match.home_score} - ${match.away_score}`
+      : "VS";
+
+    const statusMap = {
+      scheduled: "Belum dimainkan",
+      final: "Selesai",
+      in_progress: "Berlangsung"
+    };
+
+    const status = statusMap[match.status] || match.status || "Status tidak tersedia";
+
+    let details = "";
+
+    if (match.decided_in === "extra_time") {
+      details += "<span>Extra Time</span>";
+    }
+
+    if (match.decided_in === "penalties" && match.penalty_scores) {
+      details += `<span>Penalti: ${match.penalty_scores.home} - ${match.penalty_scores.away}</span>`;
+    }
+
+    if (match.aggregate_scores) {
+      details += `<span>Agregat: ${match.aggregate_scores.home} - ${match.aggregate_scores.away}</span>`;
+    }
+
+    return `
+      <article class="tournament-match">
+        <div class="tournament-match-info">
+          ${escapeHTML(formatDate(match))}
+        </div>
+
+        <div class="tournament-team-row">
+          <span>${escapeHTML(home)}</span>
+          <strong>${escapeHTML(String(scored ? match.home_score : "-"))}</strong>
+        </div>
+
+        <div class="tournament-team-row">
+          <span>${escapeHTML(away)}</span>
+          <strong>${escapeHTML(String(scored ? match.away_score : "-"))}</strong>
+        </div>
+
+        <div class="tournament-score">${escapeHTML(score)}</div>
+        <div class="tournament-status">${escapeHTML(status)}</div>
+
+        ${details ? `<div class="tournament-details">${details}</div>` : ""}
+      </article>
+    `;
+  };
+
+  let html = `
+    <div class="tournament-scroll">
+      <div class="tournament-bracket">
+  `;
+
+  rounds.forEach((matches, round) => {
+    html += `
+      <section class="tournament-round">
+        <h3>${escapeHTML(round)}</h3>
+        ${matches.map(matchCard).join("")}
+      </section>
+    `;
+  });
+
+  html += `
+      </div>
+    </div>
+    <div class="status-message">
+      Menampilkan ${tournamentMatches.length} pertandingan yang berhasil dimuat.
+    </div>
+  `;
+
+  if (hasMore) {
+    html += `
+      <button id="loadMoreTournament"
+        class="refresh-button">
+        Muat pertandingan berikutnya
+      </button>
+    `;
+  }
+
+  tournamentContainer.innerHTML = html;
+
+  const moreButton = document.getElementById("loadMoreTournament");
+
+  if (moreButton) {
+    moreButton.addEventListener("click", () => fetchTournament(true));
+  }
+}
+
+function setView(view) {
+  const isStandings = view === "standings";
+  const isTournament = view === "tournament";
+
+  matchesView.style.display =
+    (!isStandings && !isTournament) ? "block" : "none";
+
+  standingsView.style.display =
+    isStandings ? "block" : "none";
+
+  tournamentView.style.display =
+    isTournament ? "block" : "none";
+
+  if (!isStandings && !isTournament) {
+    currentView = view;
+
+    const titles = {
+      upcoming: "Belum Main",
+      live: "Sedang Main",
+      finished: "Selesai"
+    };
+
+    sectionTitle.textContent = titles[view] || "Pertandingan";
+    renderMatches();
+  }
+
+  if (isTournament && !tournamentContainer.dataset.loaded) {
+    fetchTournament();
+  }
+
+  document.querySelectorAll(".tabs button").forEach(button => {
+    button.classList.toggle("active", button.dataset.view === view);
+  });
+}
 
 async function fetchStandings() {
   const val = standingsLeagueSelect.value;
@@ -362,6 +587,7 @@ searchInput.addEventListener("input", renderMatches);
 genderFilter.addEventListener("change", renderMatches);
 leagueFilter.addEventListener("change", renderMatches);
 loadStandingsBtn.addEventListener("click", fetchStandings);
+loadTournamentBtn.addEventListener("click", () => fetchTournament());
 
 load();
 setInterval(load, 60 * 60 * 1000);
