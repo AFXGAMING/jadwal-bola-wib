@@ -25,7 +25,7 @@ let fixtures = [];
 let tournamentMatches = [];
 let tournamentOffset = 0;
 let tournamentLoading = false;
-let currentView = "live";
+let currentView = "all";
 let loading = false;
 let favorites = JSON.parse(localStorage.getItem("kickoff_favorites")) || [];
 
@@ -182,7 +182,7 @@ function renderMatches() {
     const s = !search || m.teams.home.name.toLowerCase().includes(search) || m.teams.away.name.toLowerCase().includes(search) || m.league.name.toLowerCase().includes(search);
     const l = selL === "all" || String(m.league.id) === selL;
     const g = selG === "all" || getGender(m) === selG;
-    return s && l && g && getStatus(m).type === currentView;
+    return s && l && g && (currentView === "all" || getStatus(m).type === currentView);
   }).sort((a, b) => {
     const aF = favorites.includes(a.teams.home.id) || favorites.includes(a.teams.away.id);
     const bF = favorites.includes(b.teams.home.id) || favorites.includes(b.teams.away.id);
@@ -437,6 +437,7 @@ function setView(view) {
     currentView = view;
 
     const titles = {
+      all: "Semua Pertandingan",
       upcoming: "Belum Main",
       live: "Sedang Main",
       finished: "Selesai"
