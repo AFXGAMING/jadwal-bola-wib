@@ -367,18 +367,18 @@ function renderTournament(hasMore = false) {
     </div>
   </article>
 `;
+};
 
   let html = `
     <div class="tournament-scroll">
       <div class="tournament-bracket">
   `;
-    };
 
   rounds.forEach((matches, round) => {
     html += `
       <section class="tournament-round">
         <h3>${escapeHTML(round)}</h3>
-        ${matches.map(matchCard).join("")}
+};        ${matches.map(matchCard).join("")}
       </section>
     `;
   });
