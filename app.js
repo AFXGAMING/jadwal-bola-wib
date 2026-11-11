@@ -355,33 +355,24 @@ function renderTournament(hasMore = false) {
     }
 
     return `
-      <article class="tournament-match">
-        <div class="tournament-match-info">
-          ${escapeHTML(formatDate(match))}
-        </div>
+  <article class="tournament-match">
+    <div class="tournament-team-row">
+      <span>${escapeHTML(home)}</span>
+      <strong>${escapeHTML(String(scored ? match.home_score : "-"))}</strong>
+    </div>
 
-        <div class="tournament-team-row">
-          <span>${escapeHTML(home)}</span>
-          <strong>${escapeHTML(String(scored ? match.home_score : "-"))}</strong>
-        </div>
-
-        <div class="tournament-team-row">
-          <span>${escapeHTML(away)}</span>
-          <strong>${escapeHTML(String(scored ? match.away_score : "-"))}</strong>
-        </div>
-
-        <div class="tournament-score">${escapeHTML(score)}</div>
-        <div class="tournament-status">${escapeHTML(status)}</div>
-
-        ${details ? `<div class="tournament-details">${details}</div>` : ""}
-      </article>
-    `;
-  };
+    <div class="tournament-team-row">
+      <span>${escapeHTML(away)}</span>
+      <strong>${escapeHTML(String(scored ? match.away_score : "-"))}</strong>
+    </div>
+  </article>
+`;
 
   let html = `
     <div class="tournament-scroll">
       <div class="tournament-bracket">
   `;
+    };
 
   rounds.forEach((matches, round) => {
     html += `
