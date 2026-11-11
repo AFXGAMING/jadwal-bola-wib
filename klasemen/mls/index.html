@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080e1c">
+  <title>Klasemen MLS Terbaru | KickOff</title>
+  <meta name="description" content="Lihat klasemen Major League Soccer terbaru, posisi klub, wilayah konferensi, pertandingan, gol, dan poin.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://jadwal-bola-wib.vercel.app/klasemen/mls/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="KickOff">
+  <meta property="og:title" content="Klasemen MLS Terbaru | KickOff">
+  <meta property="og:description" content="Lihat klasemen Major League Soccer terbaru, posisi klub, wilayah konferensi, pertandingan, gol, dan poin.">
+  <meta property="og:url" content="https://jadwal-bola-wib.vercel.app/klasemen/mls/">
+  <link rel="stylesheet" href="../../style.css">
+  <style>
+    .page-content { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .page-content header, .page-content section { margin-bottom: 24px; }
+    .page-content h1 { margin: 18px 0 10px; }
+    .page-content p { line-height: 1.7; }
+    .standings-card { overflow-x: auto; }
+    .standings-table { min-width: 650px; }
+    .page-links { display: flex; flex-wrap: wrap; gap: 14px; margin: 16px 0; }
+    .page-links a { color: var(--blue); }
+    .data-info { color: var(--muted); font-size: 13px; }
+  
+    .page-links #competition-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+  </style>
+</head>
+<body data-league="mls">
+<main class="page-content">
+  <nav class="page-links" aria-label="Navigasi kompetisi"><a href="/">← Beranda KickOff</a><a href="/liga/premier-league/">Jadwal Premier League</a><div id="competition-links"></div></nav>
+  <header>
+    <h1>Klasemen MLS Terbaru</h1>
+    <p>Halaman ini menyajikan klasemen Major League Soccer, kompetisi sepak bola profesional Amerika Serikat dan Kanada. Data juga menampilkan wilayah konferensi klub jika tersedia.</p>
+  </header>
+  <section>
+    <h2>Persaingan Major League Soccer</h2>
+    <p id="status">Memuat data klasemen...</p>
+    <div class="standings-card" id="klasemen">Memuat klasemen MLS...</div>
+    <p class="data-info" id="info-data">Sumber data: menunggu respons penyedia data.</p>
+  </section>
+  <section class="seo-content">
+    <h2>Statistik Klub MLS</h2>
+    <p>Statistik mencakup pertandingan dimainkan, kemenangan, hasil imbang, kekalahan, gol memasukkan, gol kemasukan, selisih gol, dan poin.</p>
+    <h2>Tentang Kompetisi MLS</h2>
+    <p>MLS menggunakan pembagian konferensi Eastern dan Western. Kolom wilayah membantu pembaca mengenali konferensi setiap klub.</p>
+    <h2>Jadwal Sepak Bola Hari Ini</h2>
+    <p>Lihat <a href="/">jadwal bola hari ini</a> untuk mengikuti pertandingan dari berbagai kompetisi dalam zona waktu Indonesia Barat (WIB).</p>
+    <p>Untuk melihat kompetisi lainnya, gunakan tautan klasemen di halaman ini.</p>
+  </section>
+  <footer>
+    <p>Data klasemen mengikuti ketersediaan penyedia data.</p>
+    <a href="/">KickOff — Jadwal Sepak Bola Hari Ini</a>
+  </footer>
+</main>
+<script src="../shared.js"></script>
+</body>
+</html>

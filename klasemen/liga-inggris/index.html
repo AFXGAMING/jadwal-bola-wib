@@ -52,13 +52,20 @@
       color: var(--muted);
       font-size: 13px;
     }
+
+    .page-links #competition-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
   </style>
 </head>
 
-<body>
+<body data-league="epl">
 <main class="page-content">
 
   <nav class="page-links" aria-label="Navigasi">
+  <div id="competition-links"></div>
     <a href="/">← Beranda KickOff</a>
     <a href="/liga/premier-league/">Jadwal Premier League</a>
   </nav>
@@ -121,6 +128,6 @@
 
 </main>
 
-<script src="./page.js"></script>
+<script src="../shared.js"></script>
 </body>
 </html>

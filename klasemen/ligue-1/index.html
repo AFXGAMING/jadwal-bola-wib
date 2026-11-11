@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080e1c">
+  <title>Klasemen Liga Prancis Terbaru | KickOff</title>
+  <meta name="description" content="Pantau klasemen Ligue 1 terbaru, posisi klub Prancis, statistik pertandingan, gol, selisih gol, dan poin.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://jadwal-bola-wib.vercel.app/klasemen/ligue-1/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="KickOff">
+  <meta property="og:title" content="Klasemen Liga Prancis Terbaru | KickOff">
+  <meta property="og:description" content="Pantau klasemen Ligue 1 terbaru, posisi klub Prancis, statistik pertandingan, gol, selisih gol, dan poin.">
+  <meta property="og:url" content="https://jadwal-bola-wib.vercel.app/klasemen/ligue-1/">
+  <link rel="stylesheet" href="../../style.css">
+  <style>
+    .page-content { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .page-content header, .page-content section { margin-bottom: 24px; }
+    .page-content h1 { margin: 18px 0 10px; }
+    .page-content p { line-height: 1.7; }
+    .standings-card { overflow-x: auto; }
+    .standings-table { min-width: 650px; }
+    .page-links { display: flex; flex-wrap: wrap; gap: 14px; margin: 16px 0; }
+    .page-links a { color: var(--blue); }
+    .data-info { color: var(--muted); font-size: 13px; }
+  
+    .page-links #competition-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+  </style>
+</head>
+<body data-league="ligue1">
+<main class="page-content">
+  <nav class="page-links" aria-label="Navigasi kompetisi"><a href="/">← Beranda KickOff</a><a href="/liga/premier-league/">Jadwal Premier League</a><div id="competition-links"></div></nav>
+  <header>
+    <h1>Klasemen Liga Prancis Terbaru</h1>
+    <p>Halaman klasemen Ligue 1 menampilkan posisi klub dalam kompetisi sepak bola tertinggi Prancis berdasarkan data yang tersedia.</p>
+  </header>
+  <section>
+    <h2>Persaingan Ligue 1</h2>
+    <p id="status">Memuat data klasemen...</p>
+    <div class="standings-card" id="klasemen">Memuat klasemen Ligue 1...</div>
+    <p class="data-info" id="info-data">Sumber data: menunggu respons penyedia data.</p>
+  </section>
+  <section class="seo-content">
+    <h2>Statistik Klub Ligue 1</h2>
+    <p>Tabel menyajikan jumlah pertandingan, kemenangan, hasil imbang, kekalahan, gol memasukkan, gol kemasukan, selisih gol, dan total poin.</p>
+    <h2>Tentang Kompetisi Ligue 1</h2>
+    <p>Perubahan hasil pertandingan akan berpengaruh terhadap perolehan poin dan posisi klub di klasemen.</p>
+    <h2>Jadwal Sepak Bola Hari Ini</h2>
+    <p>Lihat <a href="/">jadwal bola hari ini</a> untuk mengikuti pertandingan dari berbagai kompetisi dalam zona waktu Indonesia Barat (WIB).</p>
+    <p>Untuk melihat kompetisi lainnya, gunakan tautan klasemen di halaman ini.</p>
+  </section>
+  <footer>
+    <p>Data klasemen mengikuti ketersediaan penyedia data.</p>
+    <a href="/">KickOff — Jadwal Sepak Bola Hari Ini</a>
+  </footer>
+</main>
+<script src="../shared.js"></script>
+</body>
+</html>

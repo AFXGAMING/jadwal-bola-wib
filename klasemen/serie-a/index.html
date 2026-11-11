@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080e1c">
+  <title>Klasemen Liga Italia Terbaru | KickOff</title>
+  <meta name="description" content="Cek klasemen Serie A terbaru, posisi klub Italia, statistik pertandingan, gol, selisih gol, dan poin.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://jadwal-bola-wib.vercel.app/klasemen/serie-a/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="KickOff">
+  <meta property="og:title" content="Klasemen Liga Italia Terbaru | KickOff">
+  <meta property="og:description" content="Cek klasemen Serie A terbaru, posisi klub Italia, statistik pertandingan, gol, selisih gol, dan poin.">
+  <meta property="og:url" content="https://jadwal-bola-wib.vercel.app/klasemen/serie-a/">
+  <link rel="stylesheet" href="../../style.css">
+  <style>
+    .page-content { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .page-content header, .page-content section { margin-bottom: 24px; }
+    .page-content h1 { margin: 18px 0 10px; }
+    .page-content p { line-height: 1.7; }
+    .standings-card { overflow-x: auto; }
+    .standings-table { min-width: 650px; }
+    .page-links { display: flex; flex-wrap: wrap; gap: 14px; margin: 16px 0; }
+    .page-links a { color: var(--blue); }
+    .data-info { color: var(--muted); font-size: 13px; }
+  
+    .page-links #competition-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+  </style>
+</head>
+<body data-league="seriea">
+<main class="page-content">
+  <nav class="page-links" aria-label="Navigasi kompetisi"><a href="/">← Beranda KickOff</a><a href="/liga/premier-league/">Jadwal Premier League</a><div id="competition-links"></div></nav>
+  <header>
+    <h1>Klasemen Liga Italia Terbaru</h1>
+    <p>Ikuti perkembangan klasemen Serie A, kompetisi sepak bola tertinggi Italia. Tabel menyajikan posisi klub dan statistik pertandingan sepanjang musim.</p>
+  </header>
+  <section>
+    <h2>Persaingan Serie A</h2>
+    <p id="status">Memuat data klasemen...</p>
+    <div class="standings-card" id="klasemen">Memuat klasemen Serie A...</div>
+    <p class="data-info" id="info-data">Sumber data: menunggu respons penyedia data.</p>
+  </section>
+  <section class="seo-content">
+    <h2>Statistik Klub Serie A</h2>
+    <p>Statistik yang ditampilkan meliputi jumlah pertandingan, kemenangan, hasil imbang, kekalahan, gol memasukkan, gol kemasukan, selisih gol, dan poin.</p>
+    <h2>Tentang Kompetisi Serie A</h2>
+    <p>Setiap hasil pertandingan dapat memengaruhi posisi klub dalam persaingan klasemen Serie A.</p>
+    <h2>Jadwal Sepak Bola Hari Ini</h2>
+    <p>Lihat <a href="/">jadwal bola hari ini</a> untuk mengikuti pertandingan dari berbagai kompetisi dalam zona waktu Indonesia Barat (WIB).</p>
+    <p>Untuk melihat kompetisi lainnya, gunakan tautan klasemen di halaman ini.</p>
+  </section>
+  <footer>
+    <p>Data klasemen mengikuti ketersediaan penyedia data.</p>
+    <a href="/">KickOff — Jadwal Sepak Bola Hari Ini</a>
+  </footer>
+</main>
+<script src="../shared.js"></script>
+</body>
+</html>

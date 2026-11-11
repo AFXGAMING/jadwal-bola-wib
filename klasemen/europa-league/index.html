@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080e1c">
+  <title>Klasemen Liga Europa Terbaru | KickOff</title>
+  <meta name="description" content="Pantau klasemen league phase Europa League, posisi peserta, hasil pertandingan, gol, selisih gol, dan poin.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://jadwal-bola-wib.vercel.app/klasemen/europa-league/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="KickOff">
+  <meta property="og:title" content="Klasemen Liga Europa Terbaru | KickOff">
+  <meta property="og:description" content="Pantau klasemen league phase Europa League, posisi peserta, hasil pertandingan, gol, selisih gol, dan poin.">
+  <meta property="og:url" content="https://jadwal-bola-wib.vercel.app/klasemen/europa-league/">
+  <link rel="stylesheet" href="../../style.css">
+  <style>
+    .page-content { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .page-content header, .page-content section { margin-bottom: 24px; }
+    .page-content h1 { margin: 18px 0 10px; }
+    .page-content p { line-height: 1.7; }
+    .standings-card { overflow-x: auto; }
+    .standings-table { min-width: 650px; }
+    .page-links { display: flex; flex-wrap: wrap; gap: 14px; margin: 16px 0; }
+    .page-links a { color: var(--blue); }
+    .data-info { color: var(--muted); font-size: 13px; }
+  
+    .page-links #competition-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+  </style>
+</head>
+<body data-league="uel">
+<main class="page-content">
+  <nav class="page-links" aria-label="Navigasi kompetisi"><a href="/">← Beranda KickOff</a><a href="/liga/premier-league/">Jadwal Premier League</a><div id="competition-links"></div></nav>
+  <header>
+    <h1>Klasemen Liga Europa Terbaru</h1>
+    <p>Ikuti posisi seluruh peserta UEFA Europa League dalam klasemen fase liga. Tabel memperlihatkan perkembangan persaingan berdasarkan hasil pertandingan.</p>
+  </header>
+  <section>
+    <h2>Klasemen League Phase Liga Europa</h2>
+    <p id="status">Memuat data klasemen...</p>
+    <div class="standings-card" id="klasemen">Memuat klasemen Europa League...</div>
+    <p class="data-info" id="info-data">Sumber data: menunggu respons penyedia data.</p>
+  </section>
+  <section class="seo-content">
+    <h2>Statistik Klub Europa League</h2>
+    <p>Data klasemen meliputi pertandingan dimainkan, kemenangan, hasil imbang, kekalahan, gol memasukkan, gol kemasukan, selisih gol, poin, dan keterangan kualifikasi jika tersedia.</p>
+    <h2>Tentang Kompetisi Europa League</h2>
+    <p>Klasemen ini menggambarkan fase liga Europa League, bukan klasemen kompetisi domestik masing-masing klub.</p>
+    <h2>Jadwal Sepak Bola Hari Ini</h2>
+    <p>Lihat <a href="/">jadwal bola hari ini</a> untuk mengikuti pertandingan dari berbagai kompetisi dalam zona waktu Indonesia Barat (WIB).</p>
+    <p>Untuk melihat kompetisi lainnya, gunakan tautan klasemen di halaman ini.</p>
+  </section>
+  <footer>
+    <p>Data klasemen mengikuti ketersediaan penyedia data.</p>
+    <a href="/">KickOff — Jadwal Sepak Bola Hari Ini</a>
+  </footer>
+</main>
+<script src="../shared.js"></script>
+</body>
+</html>

@@ -9,4 +9,12 @@
   <url>
     <loc>https://jadwal-bola-wib.vercel.app/klasemen/liga-inggris/</loc>
   </url>
+
+  <url><loc>https://jadwal-bola-wib.vercel.app/klasemen/la-liga/</loc></url>
+  <url><loc>https://jadwal-bola-wib.vercel.app/klasemen/bundesliga/</loc></url>
+  <url><loc>https://jadwal-bola-wib.vercel.app/klasemen/serie-a/</loc></url>
+  <url><loc>https://jadwal-bola-wib.vercel.app/klasemen/ligue-1/</loc></url>
+  <url><loc>https://jadwal-bola-wib.vercel.app/klasemen/champions-league/</loc></url>
+  <url><loc>https://jadwal-bola-wib.vercel.app/klasemen/europa-league/</loc></url>
+  <url><loc>https://jadwal-bola-wib.vercel.app/klasemen/mls/</loc></url>
 </urlset>
