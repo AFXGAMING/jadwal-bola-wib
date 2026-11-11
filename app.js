@@ -336,7 +336,7 @@ function renderTournament(hasMore = false) {
     : "-";
 
   const marker =
-    match.decided_in === "penalties" ? " ET/P" :
+    match.decided_in === "penalties" ? " P" :
     match.decided_in === "extra_time" ? " ET" : "";
 
   return `
