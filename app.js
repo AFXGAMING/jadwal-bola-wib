@@ -339,23 +339,27 @@ function renderTournament(hasMore = false) {
         ? match.winner
         : match.winner?.name || "";
 
-    const marker =
-      match.decided_in === "penalties" ? " P" :
-      match.decided_in === "extra_time" ? " ET" : "";
-
     const winner = winnerName.trim().toLowerCase();
+    const winnerValue = typeof match.winner === "string"
+  ? match.winner
+  : match.winner?.team_id || match.winner?.name || "";
 
-    const homeMarker =
-      marker && (
-        winner === home.trim().toLowerCase() ||
-        winner === "home"
-      ) ? marker : "";
+const normalize = value => String(value || "").toLowerCase().trim();
 
-    const awayMarker =
-      marker && (
-        winner === away.trim().toLowerCase() ||
-        winner === "away"
-      ) ? marker : "";
+const homeWinner =
+  normalize(winnerValue) === normalize(match.home_team?.team_id) ||
+  normalize(winnerValue) === normalize(home);
+
+const awayWinner =
+  normalize(winnerValue) === normalize(match.away_team?.team_id) ||
+  normalize(winnerValue) === normalize(away);
+
+const marker =
+  match.decided_in === "penalties" ? " P" :
+  match.decided_in === "extra_time" ? " ET" : "";
+
+const homeMarker = homeWinner ? marker : "";
+const awayMarker = awayWinner ? marker : "";
 
     return `
       <article class="tournament-match">
