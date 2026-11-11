@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jadwal-bola-wib.vercel.app/sitemap.xml
