@@ -270,6 +270,7 @@ async function fetchTournament(loadMore = false) {
   }
 }
 
+
 function renderTournament(hasMore = false) {
   if (!tournamentMatches.length) {
     tournamentContainer.innerHTML =
@@ -300,17 +301,18 @@ function renderTournament(hasMore = false) {
     return;
   }
 
-  const hasValue = value =>
+  const hasScore = value =>
     value !== null && value !== undefined && value !== "";
 
   const formatDate = match => {
     const value = match.start_time || match.date;
+
     if (!value) return "Tanggal belum tersedia";
 
     const date = new Date(value);
 
     if (Number.isNaN(date.getTime())) {
-      return escapeHTML(match.date || value);
+      return match.date || value;
     }
 
     return new Intl.DateTimeFormat("id-ID", {
@@ -321,42 +323,58 @@ function renderTournament(hasMore = false) {
   };
 
   const matchCard = match => {
-  const home = match.home_team?.name || "TBD";
-  const away = match.away_team?.name || "TBD";
+    const home = match.home_team?.name || "TBD";
+    const away = match.away_team?.name || "TBD";
 
-  const hasScore = value =>
-    value !== null && value !== undefined && value !== "";
+    const homeScore = hasScore(match.home_score)
+      ? String(match.home_score)
+      : "-";
 
-  const homeScore = hasScore(match.home_score)
-    ? String(match.home_score)
-    : "-";
+    const awayScore = hasScore(match.away_score)
+      ? String(match.away_score)
+      : "-";
 
-  const awayScore = hasScore(match.away_score)
-    ? String(match.away_score)
-    : "-";
+    const winnerName =
+      typeof match.winner === "string"
+        ? match.winner
+        : match.winner?.name || "";
 
-  const marker =
-    match.decided_in === "penalties" ? " P" :
-    match.decided_in === "extra_time" ? " ET" : "";
+    const marker =
+      match.decided_in === "penalties" ? " P" :
+      match.decided_in === "extra_time" ? " ET" : "";
 
-  return `
-    <article class="tournament-match">
-      <div class="tournament-match-info">
-        ${escapeHTML(formatDate(match))}
-      </div>
+    const winner = winnerName.trim().toLowerCase();
 
-      <div class="tournament-team-row">
-        <span>${escapeHTML(home)}</span>
-        <strong>${escapeHTML(homeScore)}</strong>
-      </div>
+    const homeMarker =
+      marker && (
+        winner === home.trim().toLowerCase() ||
+        winner === "home"
+      ) ? marker : "";
 
-      <div class="tournament-team-row">
-        <span>${escapeHTML(away)}</span>
-        <strong>${escapeHTML(awayScore + marker)}</strong>
-      </div>
-    </article>
-  `;
-};
+    const awayMarker =
+      marker && (
+        winner === away.trim().toLowerCase() ||
+        winner === "away"
+      ) ? marker : "";
+
+    return `
+      <article class="tournament-match">
+        <div class="tournament-team-row">
+          <span>${escapeHTML(home)}</span>
+          <strong>${escapeHTML(homeScore + homeMarker)}</strong>
+        </div>
+
+        <div class="tournament-team-row">
+          <span>${escapeHTML(away)}</span>
+          <strong>${escapeHTML(awayScore + awayMarker)}</strong>
+        </div>
+
+        <div class="tournament-match-info">
+          ${escapeHTML(formatDate(match))}
+        </div>
+      </article>
+    `;
+  };
 
   let html = `
     <div class="tournament-scroll">
@@ -367,7 +385,7 @@ function renderTournament(hasMore = false) {
     html += `
       <section class="tournament-round">
         <h3>${escapeHTML(round)}</h3>
-};        ${matches.map(matchCard).join("")}
+        ${matches.map(matchCard).join("")}
       </section>
     `;
   });
@@ -375,15 +393,11 @@ function renderTournament(hasMore = false) {
   html += `
       </div>
     </div>
-    <div class="status-message">
-      Menampilkan ${tournamentMatches.length} pertandingan yang berhasil dimuat.
-    </div>
   `;
 
   if (hasMore) {
     html += `
-      <button id="loadMoreTournament"
-        class="refresh-button">
+      <button id="loadMoreTournament" class="refresh-button">
         Muat pertandingan berikutnya
       </button>
     `;
@@ -391,12 +405,16 @@ function renderTournament(hasMore = false) {
 
   tournamentContainer.innerHTML = html;
 
-  const moreButton = document.getElementById("loadMoreTournament");
+  const moreButton =
+    document.getElementById("loadMoreTournament");
 
   if (moreButton) {
-    moreButton.addEventListener("click", () => fetchTournament(true));
+    moreButton.addEventListener("click", () => {
+      fetchTournament(true);
+    });
   }
 }
+
 
 function setView(view) {
   const isStandings = view === "standings";
