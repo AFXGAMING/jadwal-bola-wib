@@ -75,6 +75,7 @@ module.exports = async (req, res) => {
 
     return res.status(200).json({
       provider: "API Ninjas",
+      fetched_at: new Date().toISOString(),
       league,
       season: data[0]?.season ?? null,
       season_label: data[0]?.season_label ?? null,

@@ -12,7 +12,7 @@ const sectionTitle = document.getElementById("sectionTitle");
 const matchesView = document.getElementById("matchesView");
 const standingsView = document.getElementById("standingsView");
 const standingsLeagueSelect = document.getElementById("standingsLeagueSelect");
-const loadStandingsBtn = document.getElementById("loadStandingsBtn");
+const standingsUpdatedAt = document.getElementById("standingsUpdatedAt");
 const standingsContainer = document.getElementById("standingsContainer");
 
 const TOURNAMENT_API = "/api/tournament";
@@ -40,6 +40,20 @@ function getJakartaDate() {
   const v = {};
   p.forEach(x => v[x.type] = x.value);
   return `${v.year}-${v.month}-${v.day}`;
+}
+
+function formatUpdatedAt(value) {
+  if (!value) return "Waktu sumber tidak tersedia";
+  return new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).format(new Date(value)) + " WIB";
 }
 
 function escapeHTML(value) {
@@ -88,13 +102,30 @@ function updateLeagueOptions() {
   });
   if ([...leagueFilter.options].some(o => o.value === previous)) leagueFilter.value = previous;
 
+  const standingsLeagues = [
+    ["epl", "Premier League"],
+    ["laliga", "La Liga"],
+    ["bundesliga", "Bundesliga"],
+    ["seriea", "Serie A"],
+    ["ligue1", "Ligue 1"],
+    ["ucl", "UEFA Champions League"],
+    ["uel", "UEFA Europa League"],
+    ["mls", "Major League Soccer"]
+  ];
+
+  const previousStandings = standingsLeagueSelect.value;
   standingsLeagueSelect.innerHTML = '<option value="">Pilih Kompetisi...</option>';
-  leagues.forEach(l => {
+
+  standingsLeagues.forEach(([code, name]) => {
     const opt = document.createElement("option");
-    opt.value = `${l.id}-${l.season}`;
-    opt.textContent = l.name;
+    opt.value = code;
+    opt.textContent = name;
     standingsLeagueSelect.appendChild(opt);
   });
+
+  if (standingsLeagues.some(([code]) => code === previousStandings)) {
+    standingsLeagueSelect.value = previousStandings;
+  }
 }
 
 function poisson(lambda, k) {
@@ -457,28 +488,11 @@ function setView(view) {
 }
 
 async function fetchStandings() {
-  const val = standingsLeagueSelect.value;
-  if (!val) return;
+  const league = standingsLeagueSelect.value;
 
-  const selected = standingsLeagueSelect.selectedOptions[0];
-  const name = selected.textContent.trim().toLowerCase();
-
-  const leagueMap = [
-    { match: /premier league/, code: "epl" },
-    { match: /la liga|primera division/, code: "laliga" },
-    { match: /bundesliga/, code: "bundesliga" },
-    { match: /serie a/, code: "seriea" },
-    { match: /ligue 1/, code: "ligue1" },
-    { match: /champions league/, code: "ucl" },
-    { match: /europa league/, code: "uel" },
-    { match: /major league soccer|mls/, code: "mls" }
-  ];
-
-  const found = leagueMap.find(item => item.match.test(name));
-
-  if (!found) {
+  if (!league) {
     standingsContainer.innerHTML =
-      '<div class="empty">Kompetisi ini belum didukung sumber klasemen.</div>';
+      '<div class="empty">Pilih liga untuk memuat klasemen.</div>';
     return;
   }
 
@@ -487,13 +501,17 @@ async function fetchStandings() {
 
   try {
     const res = await fetch(
-      `${STANDINGS_API}?league=${found.code}`
+      `${STANDINGS_API}?league=${encodeURIComponent(league)}`
     );
 
     const data = await res.json();
 
     if (!res.ok) {
       throw new Error(data.error || "Gagal mengambil klasemen.");
+    }
+
+    if (standingsUpdatedAt) {
+      standingsUpdatedAt.textContent = formatUpdatedAt(data.fetched_at);
     }
 
     if (!Array.isArray(data.response) || data.response.length === 0) {
@@ -572,6 +590,11 @@ async function load() {
     const res = await fetch(`${FIXTURES_API}?date=${encodeURIComponent(getJakartaDate())}`, { cache: "no-store" });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Server ${res.status}`);
+
+    const fixturesUpdatedAt = document.getElementById("fixturesUpdatedAt");
+    if (fixturesUpdatedAt) {
+      fixturesUpdatedAt.textContent = formatUpdatedAt(data.fetched_at);
+    }
     fixtures = data.response.filter(m => m && m.fixture && m.teams && m.league);
     updateLeagueOptions();
     renderMatches();
@@ -589,8 +612,8 @@ refreshBtn.addEventListener("click", load);
 searchInput.addEventListener("input", renderMatches);
 genderFilter.addEventListener("change", renderMatches);
 leagueFilter.addEventListener("change", renderMatches);
-loadStandingsBtn.addEventListener("click", fetchStandings);
+standingsLeagueSelect.addEventListener("change", fetchStandings);
 loadTournamentBtn.addEventListener("click", () => fetchTournament());
 
 load();
-setInterval(load, 60 * 60 * 1000);
+setInterval(load, 5 * 60 * 1000);

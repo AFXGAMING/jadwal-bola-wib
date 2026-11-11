@@ -25,11 +25,12 @@ module.exports = async (req, res) => {
       { headers: { "x-apisports-key": key } }
     );
     const data = await response.json();
+    data.fetched_at = new Date().toISOString();
 
     res.setHeader(
       "Cache-Control",
       response.ok
-        ? "public, max-age=0, s-maxage=1800, stale-while-revalidate=300"
+        ? "public, max-age=0, s-maxage=300, stale-while-revalidate=60"
         : "no-store"
     );
     return res.status(response.status).json(data);

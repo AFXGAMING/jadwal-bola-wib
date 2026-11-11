@@ -51,7 +51,7 @@
   <div id="matchesView">
     <section class="toolbar">
       <div class="date-row">
-        <div class="date-label">Semua Pertandingan Hari Ini</div>
+        <div class="date-label">Semua Pertandingan Hari Ini<div id="fixturesUpdatedAt" style="font-size:12px;opacity:.7;margin-top:4px;">Data belum dimuat</div></div>
         <button class="refresh-button" id="refreshBtn">↻ Refresh</button>
       </div>
       <div class="filters">
@@ -80,18 +80,18 @@
   <div id="standingsView" style="display: none;">
     <section class="toolbar">
       <div class="date-row">
-        <div class="date-label">🏆 Cek Klasemen Liga Hari Ini</div>
+        <div class="date-label">🏆 Klasemen Liga<div id="standingsUpdatedAt" style="font-size:12px;opacity:.7;margin-top:4px;">Pilih liga untuk melihat klasemen</div></div>
       </div>
       <div style="display:flex; gap:8px;">
         <select id="standingsLeagueSelect" style="flex:1;">
           <option value="">Pilih Kompetisi...</option>
         </select>
-        <button id="loadStandingsBtn" style="background:var(--blue);color:white;border:none;border-radius:9px;padding:0 15px;font-weight:bold;cursor:pointer;">Lihat</button>
+
       </div>
     </section>
 
     <section id="standingsContainer">
-      <div class="empty">Silakan pilih liga dan tekan "Lihat" untuk memuat klasemen.</div>
+      <div class="empty">Pilih liga untuk langsung menampilkan klasemen.</div>
     </section>
   </div>
 
