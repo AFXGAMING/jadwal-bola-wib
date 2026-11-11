@@ -186,3 +186,44 @@ footer{border-top:1px solid var(--line);padding:20px 14px;color:var(--muted);fon
     gap: 12px;
   }
 }
+
+/* KICKOFF SEO CONTENT */
+.seo-content {
+  margin-top: 32px;
+  padding: 20px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  line-height: 1.7;
+}
+
+.seo-content h2 {
+  margin: 20px 0 8px;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.seo-content h2:first-child {
+  margin-top: 0;
+}
+
+.seo-content p {
+  margin: 0 0 14px;
+  color: #b9c4d8;
+  font-size: 14px;
+}
+
+.seo-content a {
+  color: #60a5fa;
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .seo-content {
+    padding: 16px;
+  }
+
+  .seo-content h2 {
+    font-size: 16px;
+  }
+}
