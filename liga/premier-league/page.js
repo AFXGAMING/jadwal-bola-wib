@@ -118,16 +118,16 @@ async function muatKlasemen() {
     const tbody = document.createElement("tbody");
 
     teams.sort((a, b) =>
-      Number(a.position ?? a.rank ?? 999) -
-      Number(b.position ?? b.rank ?? 999)
+      Number(a.league_rank ?? a.position ?? a.rank ?? 999) -
+      Number(b.league_rank ?? b.position ?? b.rank ?? 999)
     );
 
     teams.forEach(team => {
       const row = document.createElement("tr");
 
       const values = [
-        team.position ?? team.rank ?? "-",
-        team.team ?? team.name ?? team.club ?? "-",
+        team.league_rank ?? team.position ?? team.rank ?? "-",
+        team.team?.name ?? team.name ?? team.club ?? "-",
         team.played ?? team.matches_played ?? team.games_played ?? "-",
         team.wins ?? team.won ?? "-",
         team.draws ?? team.ties ?? "-",
