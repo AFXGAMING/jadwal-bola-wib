@@ -253,45 +253,79 @@ function renderMatches() {
 }
 
 
-async function fetchTournament(loadMore = false) {
+async function fetchTournament() {
   if (tournamentLoading) return;
 
   const league = tournamentLeagueSelect.value;
   const season = "2026";
+  const maxPages = 20;
 
-  if (!loadMore) {
-    tournamentOffset = 0;
-    tournamentMatches = [];
-    tournamentContainer.dataset.loaded = "";
-  }
-
+  tournamentOffset = 0;
+  tournamentMatches = [];
+  tournamentContainer.dataset.loaded = "";
   tournamentLoading = true;
 
-  tournamentContainer.innerHTML = loadMore
-    ? '<div class="status-message">Mengambil pertandingan berikutnya...</div>'
-    : '<div class="status-message">Mengambil data turnamen...</div>';
+  tournamentContainer.innerHTML =
+    '<div class="status-message">Mengambil seluruh data turnamen...</div>';
 
   try {
-    const url = `${TOURNAMENT_API}?league=${encodeURIComponent(league)}&season=${season}&offset=${tournamentOffset}`;
-    const response = await fetch(url);
-    const data = await response.json();
+    const seen = new Set();
+    let pageCount = 0;
+    let lastPageLength = 0;
 
-    if (!response.ok) {
-      throw new Error(data.error || `Server ${response.status}`);
+    while (pageCount < maxPages) {
+      const url = `${TOURNAMENT_API}?league=${encodeURIComponent(league)}&season=${season}&offset=${tournamentOffset}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `Server ${response.status}`);
+      }
+
+      const page = Array.isArray(data)
+        ? data
+        : Array.isArray(data.matches)
+          ? data.matches
+          : [];
+
+      lastPageLength = page.length;
+
+      if (!page.length) break;
+
+      page.forEach(match => {
+        const key = match.game_id ||
+          [
+            match.round,
+            match.date,
+            match.home_team?.team_id,
+            match.away_team?.team_id
+          ].join("|");
+
+        if (!seen.has(key)) {
+          seen.add(key);
+          tournamentMatches.push(match);
+        }
+      });
+
+      tournamentOffset += page.length;
+      pageCount++;
+
+      tournamentContainer.innerHTML =
+        `<div class="status-message">Memuat halaman ${pageCount} · ${tournamentMatches.length} pertandingan ditemukan...</div>`;
+
+      if (page.length < 50) break;
     }
-
-    const page = Array.isArray(data)
-      ? data
-      : Array.isArray(data.matches)
-        ? data.matches
-        : [];
-
-    tournamentMatches.push(...page);
-    tournamentOffset += page.length;
 
     tournamentContainer.dataset.loaded = "true";
 
-    renderTournament(page.length === 50);
+    renderTournament();
+
+    if (pageCount === maxPages && lastPageLength === 50) {
+      tournamentContainer.insertAdjacentHTML(
+        "afterbegin",
+        '<div class="status-message">Batas pengambilan halaman tercapai. Sebagian data mungkin belum dimuat.</div>'
+      );
+    }
 
   } catch (error) {
     tournamentContainer.innerHTML =
@@ -301,8 +335,7 @@ async function fetchTournament(loadMore = false) {
   }
 }
 
-
-function renderTournament(hasMore = false) {
+function renderTournament() {
   if (!tournamentMatches.length) {
     tournamentContainer.innerHTML =
       '<div class="empty">Belum ada data pertandingan turnamen.</div>';
@@ -394,12 +427,12 @@ const awayMarker = awayWinner ? marker : "";
 
     return `
       <article class="tournament-match">
-        <div class="tournament-team-row">
+        <div class="tournament-team-row ${homeWinner ? "is-winner" : ""}">
           <span>${escapeHTML(home)}</span>
           <strong>${escapeHTML(homeScore + homeMarker)}</strong>
         </div>
 
-        <div class="tournament-team-row">
+        <div class="tournament-team-row ${awayWinner ? "is-winner" : ""}">
           <span>${escapeHTML(away)}</span>
           <strong>${escapeHTML(awayScore + awayMarker)}</strong>
         </div>
@@ -416,10 +449,36 @@ const awayMarker = awayWinner ? marker : "";
       <div class="tournament-bracket">
   `;
 
-  rounds.forEach((matches, round) => {
+  const roundOrder = round => {
+    const name = String(round).toLowerCase();
+
+    if (/qualif|preliminary/.test(name)) return 0;
+    if (/first round|1st round|round 1/.test(name)) return 100;
+    if (/second round|2nd round|round 2/.test(name)) return 200;
+    if (/third round|3rd round|round 3/.test(name)) return 300;
+    if (/fourth round|4th round|round 4/.test(name)) return 400;
+    if (/fifth round|5th round|round 5/.test(name)) return 500;
+    if (/sixth round|6th round|round 6/.test(name)) return 600;
+    if (/round of 64|last 64/.test(name)) return 650;
+    if (/play.?off/.test(name)) return 700;
+    if (/round of 32|last 32/.test(name)) return 750;
+    if (/round of 16|last 16/.test(name)) return 800;
+    if (/quarter.?final/.test(name)) return 900;
+    if (/semi.?final/.test(name)) return 1000;
+    if (/\bfinal\b/.test(name)) return 1100;
+
+    return 5000;
+};
+
+[...rounds.entries()]
+    .sort((a, b) => roundOrder(a[0]) - roundOrder(b[0]))
+    .forEach(([round, matches]) => {
     html += `
       <section class="tournament-round">
-        <h3>${escapeHTML(round)}</h3>
+        <h3>
+          <span>${escapeHTML(round)}</span>
+          <small class="tournament-round-count">${matches.length} pertandingan</small>
+        </h3>
         ${matches.map(matchCard).join("")}
       </section>
     `;
@@ -430,24 +489,8 @@ const awayMarker = awayWinner ? marker : "";
     </div>
   `;
 
-  if (hasMore) {
-    html += `
-      <button id="loadMoreTournament" class="refresh-button">
-        Muat pertandingan berikutnya
-      </button>
-    `;
-  }
-
   tournamentContainer.innerHTML = html;
 
-  const moreButton =
-    document.getElementById("loadMoreTournament");
-
-  if (moreButton) {
-    moreButton.addEventListener("click", () => {
-      fetchTournament(true);
-    });
-  }
 }
 
 
