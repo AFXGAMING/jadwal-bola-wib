@@ -907,3 +907,31 @@ loadTournamentBtn.addEventListener("click", () => fetchTournament());
 
 load();
 setInterval(load, 5 * 60 * 1000);
+
+
+/* FLOATING BACK TO TOP */
+const backToTopBtn = document.getElementById("backToTopBtn");
+
+if (backToTopBtn) {
+  function updateBackToTopButton() {
+    const visible = window.scrollY > 400;
+    backToTopBtn.classList.toggle("is-visible", visible);
+    backToTopBtn.setAttribute("aria-hidden", String(!visible));
+  }
+
+  window.addEventListener("scroll", updateBackToTopButton, {
+    passive: true
+  });
+
+  backToTopBtn.addEventListener("click", () => {
+    const reduceMotion = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    window.scrollTo({
+      top: 0,
+      behavior: reduceMotion ? "auto" : "smooth"
+    });
+  });
+
+  updateBackToTopButton();
+}
