@@ -22,6 +22,11 @@ const loadTournamentBtn = document.getElementById("loadTournamentBtn");
 const tournamentContainer = document.getElementById("tournamentContainer");
 
 let fixtures = [];
+const CACHE_DURATION = 30 * 60 * 1000;
+const tournamentCache = new Map();
+const standingsCache = new Map();
+let standingsRequestId = 0;
+
 let tournamentMatches = [];
 let tournamentOffset = 0;
 let tournamentLoading = false;
@@ -259,22 +264,30 @@ async function fetchTournament() {
   const league = tournamentLeagueSelect.value;
   const season = "2026";
   const maxPages = 20;
+  const cacheKey = `${league}|${season}`;
+  const cached = tournamentCache.get(cacheKey);
 
-  tournamentOffset = 0;
-  tournamentMatches = [];
-  tournamentContainer.dataset.loaded = "";
+  if (cached && Date.now() - cached.savedAt < CACHE_DURATION) {
+    tournamentMatches = [...cached.matches];
+    tournamentContainer.dataset.loaded = "true";
+    renderTournament();
+    return;
+  }
+
   tournamentLoading = true;
-
+  tournamentContainer.dataset.loaded = "";
   tournamentContainer.innerHTML =
-    '<div class="status-message">Mengambil seluruh data turnamen...</div>';
+    '<div class="status-message">Mengambil data turnamen...</div>';
 
   try {
     const seen = new Set();
+    const matches = [];
+    let offset = 0;
     let pageCount = 0;
     let lastPageLength = 0;
 
     while (pageCount < maxPages) {
-      const url = `${TOURNAMENT_API}?league=${encodeURIComponent(league)}&season=${season}&offset=${tournamentOffset}`;
+      const url = `${TOURNAMENT_API}?league=${encodeURIComponent(league)}&season=${season}&offset=${offset}`;
       const response = await fetch(url);
       const data = await response.json();
 
@@ -289,7 +302,6 @@ async function fetchTournament() {
           : [];
 
       lastPageLength = page.length;
-
       if (!page.length) break;
 
       page.forEach(match => {
@@ -303,35 +315,68 @@ async function fetchTournament() {
 
         if (!seen.has(key)) {
           seen.add(key);
-          tournamentMatches.push(match);
+          matches.push(match);
         }
       });
 
-      tournamentOffset += page.length;
+      offset += page.length;
       pageCount++;
 
-      tournamentContainer.innerHTML =
-        `<div class="status-message">Memuat halaman ${pageCount} · ${tournamentMatches.length} pertandingan ditemukan...</div>`;
+      if (tournamentLeagueSelect.value === league) {
+        tournamentContainer.innerHTML =
+          `<div class="status-message">Memuat halaman ${pageCount} · ${matches.length} pertandingan ditemukan...</div>`;
+      }
 
       if (page.length < 50) break;
     }
 
-    tournamentContainer.dataset.loaded = "true";
+    tournamentCache.set(cacheKey, {
+      matches: [...matches],
+      savedAt: Date.now()
+    });
 
-    renderTournament();
+    if (tournamentLeagueSelect.value === league) {
+      tournamentMatches = matches;
+      tournamentOffset = offset;
+      tournamentContainer.dataset.loaded = "true";
+      renderTournament();
 
-    if (pageCount === maxPages && lastPageLength === 50) {
-      tournamentContainer.insertAdjacentHTML(
-        "afterbegin",
-        '<div class="status-message">Batas pengambilan halaman tercapai. Sebagian data mungkin belum dimuat.</div>'
-      );
+      if (pageCount === maxPages && lastPageLength === 50) {
+        tournamentContainer.insertAdjacentHTML(
+          "afterbegin",
+          '<div class="status-message">Batas pengambilan halaman tercapai. Sebagian data mungkin belum dimuat.</div>'
+        );
+      }
     }
-
   } catch (error) {
-    tournamentContainer.innerHTML =
-      `<div class="status-message">Gagal mengambil turnamen.<br>${escapeHTML(error.message)}</div>`;
+    if (tournamentLeagueSelect.value === league) {
+      tournamentContainer.innerHTML =
+        `<div class="status-message">Gagal mengambil turnamen.<br>${escapeHTML(error.message)}</div>`;
+    }
   } finally {
     tournamentLoading = false;
+
+    const selectedLeague = tournamentLeagueSelect.value;
+    const selectedKey = `${selectedLeague}|2026`;
+    const selectedCache = tournamentCache.get(selectedKey);
+
+    if (
+      tournamentView &&
+      currentView === "tournament" &&
+      selectedLeague !== league &&
+      !(selectedCache && Date.now() - selectedCache.savedAt < CACHE_DURATION)
+    ) {
+      fetchTournament();
+    } else if (
+      tournamentView &&
+      currentView === "tournament" &&
+      selectedLeague !== league &&
+      selectedCache
+    ) {
+      tournamentMatches = [...selectedCache.matches];
+      tournamentContainer.dataset.loaded = "true";
+      renderTournament();
+    }
   }
 }
 
@@ -532,10 +577,21 @@ function setView(view) {
 
 async function fetchStandings() {
   const league = standingsLeagueSelect.value;
+  const requestId = ++standingsRequestId;
 
   if (!league) {
     standingsContainer.innerHTML =
       '<div class="empty">Pilih liga untuk memuat klasemen.</div>';
+    return;
+  }
+
+  const cached = standingsCache.get(league);
+
+  if (cached && Date.now() - cached.savedAt < CACHE_DURATION) {
+    standingsContainer.innerHTML = cached.html;
+    if (standingsUpdatedAt) {
+      standingsUpdatedAt.textContent = cached.updatedAt;
+    }
     return;
   }
 
@@ -546,20 +602,26 @@ async function fetchStandings() {
     const res = await fetch(
       `${STANDINGS_API}?league=${encodeURIComponent(league)}`
     );
-
     const data = await res.json();
 
     if (!res.ok) {
       throw new Error(data.error || "Gagal mengambil klasemen.");
     }
 
-    if (standingsUpdatedAt) {
-      standingsUpdatedAt.textContent = formatUpdatedAt(data.fetched_at);
-    }
+    const updatedAt = formatUpdatedAt(data.fetched_at);
 
     if (!Array.isArray(data.response) || data.response.length === 0) {
-      standingsContainer.innerHTML =
-        '<div class="empty">Data klasemen belum tersedia.</div>';
+      const html = '<div class="empty">Data klasemen belum tersedia.</div>';
+      standingsCache.set(league, {
+        html,
+        updatedAt,
+        savedAt: Date.now()
+      });
+
+      if (requestId === standingsRequestId) {
+        standingsContainer.innerHTML = html;
+        if (standingsUpdatedAt) standingsUpdatedAt.textContent = updatedAt;
+      }
       return;
     }
 
@@ -570,6 +632,7 @@ async function fetchStandings() {
             || (a.conference_rank ?? 99) - (b.conference_rank ?? 99);
         })
       : data.response;
+
     const seasonLabel = data.season_label || "Musim berjalan";
 
     let tableHTML = `
@@ -631,14 +694,25 @@ async function fetchStandings() {
       </div>
     `;
 
-    standingsContainer.innerHTML = tableHTML;
+    standingsCache.set(league, {
+      html: tableHTML,
+      updatedAt,
+      savedAt: Date.now()
+    });
 
+    if (requestId === standingsRequestId) {
+      standingsContainer.innerHTML = tableHTML;
+      if (standingsUpdatedAt) {
+        standingsUpdatedAt.textContent = updatedAt;
+      }
+    }
   } catch (err) {
-    standingsContainer.innerHTML =
-      `<div class="empty">${escapeHTML(err.message || "Gagal memuat klasemen.")}</div>`;
+    if (requestId === standingsRequestId) {
+      standingsContainer.innerHTML =
+        `<div class="empty">${escapeHTML(err.message || "Gagal memuat klasemen.")}</div>`;
+    }
   }
 }
-
 
 async function load() {
   if (loading) return;
