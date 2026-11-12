@@ -563,7 +563,13 @@ async function fetchStandings() {
       return;
     }
 
-    const standings = data.response;
+    const standings = league === "mls"
+      ? [...data.response].sort((a, b) => {
+          const order = { Eastern: 1, Western: 2 };
+          return (order[a.conference] ?? 99) - (order[b.conference] ?? 99)
+            || (a.conference_rank ?? 99) - (b.conference_rank ?? 99);
+        })
+      : data.response;
     const seasonLabel = data.season_label || "Musim berjalan";
 
     let tableHTML = `
@@ -585,12 +591,25 @@ async function fetchStandings() {
           <tbody>
     `;
 
+    let currentConference = "";
+
     standings.forEach(team => {
       const t = team.team || {};
 
+      if (league === "mls" && team.conference !== currentConference) {
+        currentConference = team.conference;
+        tableHTML += `
+          <tr class="conference-heading">
+            <td colspan="8">${escapeHTML(currentConference || "Konferensi")}</td>
+          </tr>
+        `;
+      }
+
       tableHTML += `
         <tr>
-          <td>${team.league_rank ?? "-"}</td>
+          <td>${league === "mls"
+            ? team.conference_rank ?? "-"
+            : team.league_rank ?? "-"}</td>
           <td class="left">
             <div class="team-cell">
               <span class="team-name">${escapeHTML(t.name || "Klub")}</span>
