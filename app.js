@@ -10,6 +10,9 @@ const matchCount = document.getElementById("matchCount");
 const sectionTitle = document.getElementById("sectionTitle");
 
 const matchesView = document.getElementById("matchesView");
+const matchDetailView = document.getElementById("matchDetailView");
+const matchDetailContent = document.getElementById("matchDetailContent");
+const backToMatchesBtn = document.getElementById("backToMatchesBtn");
 const standingsView = document.getElementById("standingsView");
 const standingsLeagueSelect = document.getElementById("standingsLeagueSelect");
 const standingsUpdatedAt = document.getElementById("standingsUpdatedAt");
@@ -205,9 +208,157 @@ function toggleFavorite(id) {
   renderMatches();
 }
 
+let detailRequestId = 0;
+let detailPreviousView = "all";
+
 matchesEl.addEventListener("click", (e) => {
-  if (e.target.classList.contains("star-btn")) toggleFavorite(parseInt(e.target.dataset.teamId, 10));
+  const star = e.target.closest(".star-btn");
+  if (star) {
+    e.stopPropagation();
+    toggleFavorite(parseInt(star.dataset.teamId, 10));
+    return;
+  }
+
+  const card = e.target.closest(".match-card[data-fixture-id]");
+  if (card) openMatchDetail(card.dataset.fixtureId);
 });
+
+backToMatchesBtn.addEventListener("click", () => {
+  setView(detailPreviousView);
+});
+
+function displayStatValue(value) {
+  if (value === null || value === undefined || value === "") return "—";
+  return escapeHTML(value);
+}
+
+function statNumber(value) {
+  if (value === null || value === undefined) return null;
+  const parsed = Number(String(value).replace("%", "").replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+async function openMatchDetail(fixtureId) {
+  const match = fixtures.find(item => String(item.fixture.id) === String(fixtureId));
+  if (!match) return;
+
+  const requestId = ++detailRequestId;
+  detailPreviousView = currentView;
+
+  matchesView.style.display = "none";
+  standingsView.style.display = "none";
+  tournamentView.style.display = "none";
+  matchDetailView.style.display = "block";
+
+  const status = getStatus(match);
+  const home = match.teams.home;
+  const away = match.teams.away;
+  const hasScore = match.goals.home !== null && match.goals.away !== null;
+
+  matchDetailContent.innerHTML = `
+    <div class="detail-card">
+      <div class="detail-league">${escapeHTML(match.league.name)} · ${escapeHTML(getTime(match))}</div>
+      <div class="detail-status ${status.type}">${escapeHTML(status.label)}</div>
+      <div class="detail-scoreboard">
+        <div class="detail-team">
+          ${home.logo ? `<img src="${escapeHTML(home.logo)}" alt="" loading="lazy">` : ""}
+          <strong>${escapeHTML(home.name)}</strong>
+        </div>
+        <div class="detail-score">${hasScore ? `${escapeHTML(match.goals.home)} - ${escapeHTML(match.goals.away)}` : "VS"}</div>
+        <div class="detail-team">
+          ${away.logo ? `<img src="${escapeHTML(away.logo)}" alt="" loading="lazy">` : ""}
+          <strong>${escapeHTML(away.name)}</strong>
+        </div>
+      </div>
+    </div>
+    <div class="detail-card">
+      <h2>Statistik Pertandingan</h2>
+      <div id="matchStats" class="empty">Mengambil statistik dari API-Football...</div>
+    </div>`;
+
+  try {
+    const response = await fetch(`/api/statistics?fixture=${encodeURIComponent(fixtureId)}`, {
+      cache: "no-store"
+    });
+    const data = await response.json();
+
+    if (requestId !== detailRequestId) return;
+
+    if (!response.ok || (data.errors && Object.keys(data.errors).length)) {
+      throw new Error(data.message || data.error || "Statistik tidak dapat dimuat.");
+    }
+
+    const teams = Array.isArray(data.response) ? data.response : [];
+    const homeStats = teams.find(item => String(item.team?.id) === String(home.id));
+    const awayStats = teams.find(item => String(item.team?.id) === String(away.id));
+
+    if (!homeStats || !awayStats ||
+        !homeStats.statistics?.length || !awayStats.statistics?.length) {
+      document.getElementById("matchStats").innerHTML =
+        '<div class="empty">Statistik belum tersedia dari penyedia data untuk pertandingan ini.</div>';
+      return;
+    }
+
+    const labels = {
+      "Shots on Goal": "Tembakan tepat sasaran",
+      "Shots off Goal": "Tembakan melenceng",
+      "Total Shots": "Total tembakan",
+      "Blocked Shots": "Tembakan diblok",
+      "Shots insidebox": "Tembakan dalam kotak penalti",
+      "Shots outsidebox": "Tembakan luar kotak penalti",
+      "Fouls": "Pelanggaran",
+      "Corner Kicks": "Tendangan sudut",
+      "Offsides": "Offside",
+      "Ball Possession": "Penguasaan bola",
+      "Yellow Cards": "Kartu kuning",
+      "Red Cards": "Kartu merah",
+      "Goalkeeper Saves": "Penyelamatan kiper",
+      "Total passes": "Total operan",
+      "Passes accurate": "Operan akurat",
+      "expected_goals": "Expected Goals (xG)",
+      "Passes %": "Akurasi operan"
+    };
+
+    const awayMap = new Map(awayStats.statistics.map(item => [item.type, item.value]));
+    const rows = homeStats.statistics
+      .filter(item => labels[item.type])
+      .map(item => {
+        const left = item.value;
+        const right = awayMap.get(item.type);
+        const a = statNumber(left);
+        const b = statNumber(right);
+        const max = Math.max(a ?? 0, b ?? 0);
+        const leftWidth = max > 0 && a !== null ? a / max * 100 : 0;
+        const rightWidth = max > 0 && b !== null ? b / max * 100 : 0;
+
+        return `
+          <div class="stat-row">
+            <div class="stat-values">
+              <strong>${displayStatValue(left)}</strong>
+              <span>${escapeHTML(labels[item.type])}</span>
+              <strong>${displayStatValue(right)}</strong>
+            </div>
+            <div class="stat-bars">
+              <div class="stat-track">
+                <span class="stat-bar home" style="width:${leftWidth}%"></span>
+              </div>
+              <div class="stat-track">
+                <span class="stat-bar away" style="width:${rightWidth}%"></span>
+              </div>
+            </div>
+          </div>`;
+      });
+
+    document.getElementById("matchStats").innerHTML = rows.length
+      ? rows.join("")
+      : '<div class="empty">Belum ada jenis statistik yang didukung untuk pertandingan ini.</div>';
+
+  } catch (error) {
+    if (requestId !== detailRequestId) return;
+    document.getElementById("matchStats").innerHTML =
+      `<div class="empty">${escapeHTML(error.message)}<br>Silakan coba lagi nanti.</div>`;
+  }
+}
 
 function renderMatches() {
   const search = searchInput.value.toLowerCase().trim();
@@ -241,7 +392,7 @@ function renderMatches() {
     const subHTML = getSubScore(match) ? `<div class="sub-score">${escapeHTML(getSubScore(match))}</div>` : "";
 
     return `
-    <article class="match-card">
+    <article class="match-card" data-fixture-id="${escapeHTML(match.fixture.id)}" role="button" tabindex="0" aria-label="Lihat detail ${escapeHTML(match.teams.home.name)} melawan ${escapeHTML(match.teams.away.name)}">
       <div class="match-top">
         <div class="league">${match.league.logo ? `<img src="${escapeHTML(match.league.logo)}" loading="lazy">` : ""}<span>${escapeHTML(match.league.name)}</span></div>
         <span class="status ${status.type}">${escapeHTML(status.label)}</span>
@@ -540,6 +691,7 @@ const awayMarker = awayWinner ? marker : "";
 
 
 function setView(view) {
+  matchDetailView.style.display = "none";
   const isStandings = view === "standings";
   const isTournament = view === "tournament";
 
