@@ -157,6 +157,7 @@ function calculatePrediction(match) {
   ) return null;
 
   const totalMinutes = code === "ET" ? 120 : 90;
+  if (Number(elapsed) >= totalMinutes) return null;
   const remaining = Math.max(0, totalMinutes - Math.min(Number(elapsed), totalMinutes));
   const homeLambda = 1.35 * (remaining / 90);
   const awayLambda = 1.05 * (remaining / 90);
@@ -277,6 +278,7 @@ async function openMatchDetail(fixtureId) {
     </div>`;
 
   try {
+    if (status.type === "upcoming") { document.getElementById("matchStats").innerHTML = `<div class="empty">Statistik tersedia setelah pertandingan dimulai.</div>`; return; }
     const response = await fetch(`/api/statistics?fixture=${encodeURIComponent(fixtureId)}`, {
       cache: "no-store"
     });
